@@ -13,6 +13,7 @@ import {
   GripVertical,
   Settings2,
   FileCode,
+  Info,
 } from "lucide-react";
 import type { Process } from "./ProcessCard";
 
@@ -187,25 +188,27 @@ export function FuentesCamposSection({
 
   if (view === "edit" && selectedFuente) {
     return (
-      <div className="max-w-5xl mx-auto pb-12 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="max-w-4xl mx-auto pb-12 animate-in fade-in slide-in-from-right-4 duration-300">
         {/* Nav Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={handleBack}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-800"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h3 className="text-xl font-bold text-slate-900 leading-tight">
-                Configurar fuente: {selectedFuente.nombre}
-              </h3>
-              {renderStatus(selectedFuente.estado)}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div className="flex items-center gap-5">
+            <button
+              onClick={handleBack}
+              className="group p-2.5 bg-white border border-slate-200 hover:border-primary hover:text-primary text-slate-500 rounded-xl transition-all shadow-sm flex items-center justify-center"
+            >
+              <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-2xl font-bold text-primary">
+                  Configurar fuente: {selectedFuente.nombre}
+                </h3>
+                {renderStatus(selectedFuente.estado)}
+              </div>
+              <p className="text-slate-500 text-sm max-w-2xl">
+                Define los datos base y mapea los campos al estándar del sistema.
+              </p>
             </div>
-            <p className="text-sm text-slate-500">
-              Define los datos base y mapea los campos al estándar del sistema.
-            </p>
           </div>
         </div>
 
@@ -453,10 +456,12 @@ export function FuentesCamposSection({
             Fuentes y campos
           </h3>
           <p className="text-slate-500 text-sm max-w-2xl">
-            Registra los insumos que participan en el proceso y mapea su
-            estructura hacia el modelo estándar de conciliación. No determines
-            aquí la lógica de cruce, solo el inventario de datos.
+            Registra los insumos que participan en el proceso y mapea su estructura hacia el modelo estándar de conciliación.
           </p>
+          <div className="mt-4 flex items-center gap-2.5 text-sm font-medium text-slate-500 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 w-fit">
+            <Info size={16} className="text-primary" />
+            <span>No determines aquí la lógica de cruce, solo el inventario de datos.</span>
+          </div>
         </div>
         <button className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">
           <Plus size={16} />
@@ -464,7 +469,7 @@ export function FuentesCamposSection({
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {fuentes.map((fuente) => (
           <div
             key={fuente.id}
