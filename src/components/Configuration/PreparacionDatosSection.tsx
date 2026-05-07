@@ -1032,14 +1032,14 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
   const renderStatusBadge = (status: BlockStatus) => {
     switch (status) {
       case "Completo":
-        return <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200"><CheckCircle2 size={12} /> Completo</span>;
+        return <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase tracking-widest"><CheckCircle2 size={10} /> Completo</span>;
       case "Incompleto":
-        return <span className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200"><AlertTriangle size={12} /> Incompleto</span>;
+        return <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase tracking-widest"><AlertTriangle size={10} /> Incompleto</span>;
       case "Requiere revisión":
-        return <span className="flex items-center gap-1.5 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200"><AlertCircle size={12} /> Requiere revisión</span>;
+        return <span className="flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 uppercase tracking-widest"><AlertCircle size={10} /> Revisión</span>;
       case "Sin configurar":
       default:
-        return <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">Sin configurar</span>;
+        return <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-widest">Sin configurar</span>;
     }
   };
 
@@ -1602,7 +1602,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       icon: CheckSquare,
       iconClasses: "bg-teal-50 text-teal-700 border-teal-100 group-hover:bg-teal-100",
       title: "Validaciones de entrada",
-      desc: "Administra las validaciones que revisan los datos antes de procesarlos"
+      desc: "Revisa condiciones mínimas antes de procesar los datos."
     },
     {
       id: "Normalización" as TipoRegla,
@@ -1610,7 +1610,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       icon: Settings2,
       iconClasses: "bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-100",
       title: "Normalizaciones",
-      desc: "Ajustes simples para estandarizar valores sin alterar el significado"
+      desc: "Estandariza formatos y valores sin cambiar su significado."
     },
     {
       id: "Transformación" as TipoRegla,
@@ -1618,7 +1618,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       icon: Wand2,
       iconClasses: "bg-violet-50 text-violet-600 border-violet-100 group-hover:bg-violet-100",
       title: "Transformaciones",
-      desc: "Reglas complejas que derivan, extraen o calculan nuevos datos"
+      desc: "Genera campos derivados o estructuras necesarias para conciliar."
     }
   ];
 
@@ -1765,49 +1765,48 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
           </div>
 
           <div className="relative">
-            {/* Línea conectora del Stepper */}
-            <div className="hidden sm:block absolute left-[15px] top-8 bottom-8 w-[2px] bg-slate-100 z-0" />
-
-            <div className="space-y-5">
-              {stepsConfig.map((step) => {
+            <div className="space-y-4">
+              {stepsConfig.map((step, index) => {
                 const stats = getSectionStats(step.id);
                 
                 return (
-                  <div key={step.id} 
-                    onClick={() => openSection(step.id)}
-                    className="group relative cursor-pointer flex items-center gap-4 sm:gap-6"
-                  >
-                    {/* Stepper Number */}
-                    <div className="hidden sm:flex relative z-10 w-8 h-8 rounded-full bg-white border-2 border-slate-200 shadow-sm items-center justify-center text-[13px] font-black text-slate-400 group-hover:border-primary group-hover:text-primary transition-colors shrink-0">
-                      {step.num}
-                    </div>
-
-                    <div className={`flex-1 bg-white border-2 border-transparent ring-1 ring-slate-200/80 shadow-sm hover:shadow-md shadow-slate-200/40 group-hover:ring-primary/40 group-hover:border-primary/20 rounded-2xl overflow-hidden transition-all duration-400 group-hover:-translate-y-0.5`}>
-                      <div className="w-full flex items-center justify-between p-6 text-left bg-white transition-colors">
-                        <div className="flex items-center gap-5 flex-1">
-                          <div className={`p-3 rounded-xl shadow-sm border transition-all duration-300 shrink-0 ${step.iconClasses}`}>
-                            <step.icon size={24} />
+                  <div key={step.id}>
+                    {index > 0 && (
+                      <div className="flex justify-center -my-3 relative z-10 pointer-events-none">
+                        <div className="bg-slate-50 border border-slate-200 rounded-full p-1 shadow-sm">
+                          <ArrowDown size={14} className="text-slate-400" />
+                        </div>
+                      </div>
+                    )}
+                    <div 
+                      onClick={() => openSection(step.id)}
+                      className="group relative cursor-pointer flex items-center z-0"
+                    >
+                      <div className="w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all hover:border-primary/30">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className={`p-2.5 rounded-xl border transition-all duration-300 shrink-0 ${step.iconClasses}`}>
+                            <step.icon size={20} />
                           </div>
                           
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-3 mb-1.5">
-                              <h4 className="text-[17px] font-bold text-slate-800 tracking-tight group-hover:text-primary transition-colors">
+                            <div className="flex items-center gap-3 mb-0.5">
+                              <h4 className="text-[15px] font-bold text-slate-800 tracking-tight group-hover:text-primary transition-colors">
                                 {step.title}
                               </h4>
                               {renderStatusBadge(stats.status)}
                             </div>
-                            <p className="text-[13.5px] text-slate-500 leading-relaxed font-medium line-clamp-1">
+                            <p className="text-[13px] text-slate-500 line-clamp-1 mb-1.5">
                               {step.desc}
                             </p>
                             
                             {/* Metrics Line */}
-                            <div className="mt-4 flex flex-wrap items-center gap-x-3.5 gap-y-2">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                               <div className="flex items-center gap-1.5">
-                                <Layers size={14} className="text-slate-400" />
-                                <span className="text-[12px] font-bold text-slate-600 tracking-tight">
+                                <Layers size={13} className="text-slate-400" />
+                                <span className="text-[11px] font-semibold text-slate-600">
                                   {stats.total === 0 
-                                    ? `Sin ${step.id === 'Validación' ? 'validaciones' : 'reglas'}`
-                                    : (stats.total === 1 ? `1 ${step.id === 'Validación' ? 'validación' : 'regla'} configurada` : `${stats.total} ${step.id === 'Validación' ? 'validaciones' : 'reglas'} configuradas`)}
+                                    ? `Sin ${step.id === 'Validación' ? 'validaciones' : step.id === 'Normalización' ? 'normalizaciones' : 'transformaciones'}`
+                                    : (stats.total === 1 ? `1 ${step.id === 'Validación' ? 'validación' : step.id === 'Normalización' ? 'normalización' : 'transformación'}` : `${stats.total} ${step.id === 'Validación' ? 'validaciones' : step.id === 'Normalización' ? 'normalizaciones' : 'transformaciones'}`)}
                                 </span>
                               </div>
                               {stats.total > 0 && (
@@ -1815,7 +1814,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                   <div className="w-1 h-1 rounded-full bg-slate-300" />
                                   <div className="flex items-center gap-1.5">
                                     <CheckCircle2 size={13} className="text-slate-400" />
-                                    <span className="text-[12px] font-bold text-slate-500 tracking-tight">
+                                    <span className="text-[11px] font-semibold text-slate-500">
                                       {stats.active === 1 ? '1 activa' : `${stats.active} activas`}
                                     </span>
                                   </div>
@@ -1826,8 +1825,8 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                   <div className="w-1 h-1 rounded-full bg-slate-300" />
                                   <div className="flex items-center gap-1.5">
                                     <ShieldAlert size={13} className="text-slate-400" />
-                                    <span className="text-[12px] font-bold text-slate-500 tracking-tight">
-                                      {stats.blocking === 1 ? 'incluye 1 regla de bloqueo' : `incluye ${stats.blocking} reglas de bloqueo`}
+                                    <span className="text-[11px] font-semibold text-slate-500">
+                                      {stats.blocking === 1 ? '1 con bloqueo' : `${stats.blocking} con bloqueo`}
                                     </span>
                                   </div>
                                 </>
@@ -1840,8 +1839,8 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                           {editedBlocks.has(step.id) && (
                             <div className="w-2 h-2 rounded-full bg-blue-500" title="Cambios sin guardar" />
                           )}
-                          <div className="p-2.5 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-primary/5 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 hidden sm:block">
-                            <ChevronRight size={20} />
+                          <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-100 text-slate-400 group-hover:bg-primary/5 group-hover:text-primary group-hover:border-primary/20 transition-all duration-300 hidden sm:block">
+                            <ChevronRight size={16} />
                           </div>
                         </div>
                       </div>
@@ -1851,41 +1850,44 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
               })}
 
               {/* Block 4: Vista previa / Prueba */}
-              <div className="relative mt-6 flex items-center gap-4 sm:gap-6">
-                <div className="hidden sm:flex relative z-10 w-8 h-8 rounded-full bg-slate-50 border-2 border-slate-200 shadow-sm items-center justify-center text-[13px] font-black text-slate-400 shrink-0">
-                  4
+              <div>
+                <div className="flex justify-center -my-3 relative z-10 pointer-events-none">
+                  <div className="bg-slate-50 border border-slate-200 rounded-full p-1 shadow-sm">
+                    <ArrowDown size={14} className="text-slate-400" />
+                  </div>
                 </div>
-                
-                <div className="flex-1 bg-primary shadow-md rounded-2xl overflow-hidden transition-all">
-                  <div className="p-6">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-                      <div className="flex items-center gap-5 flex-1">
-                        <div className="p-3 rounded-xl bg-white/10 border border-white/20 text-white shrink-0">
-                          <Eye size={24} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-3 mb-1.5">
-                            <h4 className="text-[17px] font-bold text-white tracking-tight">
-                              Vista previa y prueba
-                            </h4>
-                            <span className="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/20 uppercase tracking-widest">
-                              No probado
-                            </span>
+                <div className="relative flex items-center w-full z-0">                
+                  <div className="flex-1 bg-slate-800 transition-all rounded-2xl shadow-sm hover:shadow-md border border-slate-700">
+                    <div className="p-4">
+                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-white shrink-0">
+                            <Eye size={20} />
                           </div>
-                          <p className="text-[13.5px] text-slate-300 leading-relaxed font-medium line-clamp-1">
-                            Aplica las reglas sobre una muestra para comparar el antes y el después.
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-3 mb-1.5">
+                              <h4 className="text-[15px] font-bold text-white tracking-tight">
+                                Vista previa y prueba
+                              </h4>
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded-md border border-white/10 uppercase tracking-widest">
+                                No probado
+                              </span>
+                            </div>
+                            <p className="text-[13px] text-slate-400 line-clamp-1 mb-1.5">
+                              Aplica las reglas sobre una muestra para revisar el resultado.
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="w-full md:w-auto flex flex-col items-stretch md:items-end gap-2 shrink-0 border-t md:border-t-0 border-white/10 md:pl-5 pt-4 md:pt-0">
-                        <button 
-                          onClick={() => setIsPreviewModalOpen(true)}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[13.5px] font-bold rounded-xl shadow-sm transition-colors group"
-                        >
-                          <PlayCircle size={18} className="text-emerald-100 group-hover:text-white transition-colors" />
-                          Ejecutar prueba
-                        </button>
+                        
+                        <div className="w-full md:w-auto flex flex-col items-stretch md:items-end gap-2 shrink-0 md:pl-4 pt-3 md:pt-0">
+                          <button 
+                            onClick={() => setIsPreviewModalOpen(true)}
+                            className="flex items-center justify-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[13px] font-bold rounded-lg shadow-sm transition-colors group"
+                          >
+                            <PlayCircle size={16} className="text-white/70 group-hover:text-white transition-colors" />
+                            Ejecutar prueba
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

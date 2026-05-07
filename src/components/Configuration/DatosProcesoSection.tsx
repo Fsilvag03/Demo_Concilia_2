@@ -14,35 +14,29 @@ export function DatosProcesoSection({
   return (
     <div className="max-w-4xl mx-auto pb-12 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h3 className="text-2xl font-bold text-primary mb-2">
-            Datos del proceso
-          </h3>
-          <p className="text-slate-500 text-sm max-w-2xl">
-            Define la información funcional, alcance operativo y responsables
-            del proceso conciliatorio.
-          </p>
-        </div>
+      <div className="mb-8">
+        <h3 className="text-2xl font-bold text-primary mb-2">
+          Datos del proceso
+        </h3>
+        <p className="text-slate-500 text-sm max-w-2xl">
+          Define la información funcional, alcance operativo y responsables
+          del proceso conciliatorio.
+        </p>
       </div>
 
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-6 md:p-8 divide-y divide-slate-100">
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden divide-y divide-slate-100">
         {/* Identificación */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8">
-          <div>
-            <h4 className="text-[15px] font-bold text-slate-800 flex items-center gap-2.5 mb-1.5">
-              <div className="p-1 px-[5px] bg-primary/5 border border-primary/10 rounded-md shadow-sm">
-                <Target size={16} className="text-primary" />
-              </div>
+        <div className="flex flex-col md:flex-row gap-6 p-6">
+          <div className="md:w-1/3 shrink-0">
+            <h4 className="text-[14px] font-bold text-slate-800 flex items-center gap-2 mb-1.5">
+              <Target size={16} className="text-primary" />
               Identificación
             </h4>
-            <p className="text-[13px] text-slate-500 leading-relaxed pr-4">
-              Establece el nombre oficial, el código único y el propósito
-              principal de esta conciliación.
+            <p className="text-[12.5px] text-slate-500 leading-relaxed md:pr-4">
+              Nombre oficial, código y propósito de la conciliación.
             </p>
           </div>
-
-          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+          <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
             <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                 Nombre del proceso <span className="text-rose-500">*</span>
@@ -52,7 +46,7 @@ export function DatosProcesoSection({
                 defaultValue={process.name}
                 onChange={onChange}
                 placeholder="Ej. Municipio, Cash Pagos"
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400"
               />
             </div>
             <div>
@@ -64,17 +58,7 @@ export function DatosProcesoSection({
                 defaultValue={`PRC-${process.id.padStart(3, "0")}`}
                 onChange={onChange}
                 placeholder="Ej. MUN-001"
-                className="w-full px-3.5 py-2.5 bg-slate-100/70 border border-slate-200 rounded-xl text-[14px] text-slate-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
-                Descripción
-              </label>
-              <textarea
-                onChange={onChange}
-                placeholder="Explica brevemente el objetivo de este proceso conciliatorio..."
-                className="w-full px-3.5 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all h-24 resize-none placeholder:text-slate-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] text-slate-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
               />
             </div>
             <div className="sm:col-span-2">
@@ -83,7 +67,7 @@ export function DatosProcesoSection({
               </label>
               <select
                 onChange={onChange}
-                className="w-full sm:w-1/2 px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full sm:w-1/2 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
                 <option value="">Seleccionar categoría...</option>
                 <option value="Servicios públicos">Servicios públicos</option>
@@ -96,32 +80,38 @@ export function DatosProcesoSection({
                 <option value="Otros">Otros</option>
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
+                Descripción
+              </label>
+              <textarea
+                onChange={onChange}
+                placeholder="Explica brevemente el objetivo de este proceso conciliatorio..."
+                className="w-full px-3.5 py-3 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all h-20 resize-none placeholder:text-slate-400"
+              />
+            </div>
           </div>
-        </section>
-
+        </div>
+        
         {/* Alcance operativo */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8">
-          <div>
-            <h4 className="text-[15px] font-bold text-slate-800 flex items-center gap-2.5 mb-1.5">
-              <div className="p-1 px-[5px] bg-slate-50 border border-slate-200 rounded-md shadow-sm">
-                <Clock size={16} className="text-slate-500" />
-              </div>
+        <div className="flex flex-col md:flex-row gap-6 p-6 bg-slate-50/30">
+          <div className="md:w-1/3 shrink-0">
+            <h4 className="text-[14px] font-bold text-slate-800 flex items-center gap-2 mb-1.5">
+              <Clock size={16} className="text-slate-500" />
               Alcance operativo
             </h4>
-            <p className="text-[13px] text-slate-500 leading-relaxed pr-4">
-              Define cada cuánto se ejecuta el proceso y qué periodo de
-              información debe considerarse.
+            <p className="text-[12.5px] text-slate-500 leading-relaxed md:pr-4">
+              Definición de frecuencia y el periodo de información.
             </p>
           </div>
-
-          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+          <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
             <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                 Frecuencia <span className="text-rose-500">*</span>
               </label>
               <select
                 onChange={onChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
                 <option value="Diaria">Diaria</option>
                 <option value="Semanal">Semanal</option>
@@ -136,7 +126,7 @@ export function DatosProcesoSection({
               </label>
               <select
                 onChange={onChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
                 <option value="Día caído">Día caído</option>
                 <option value="Día actual">Día actual</option>
@@ -156,7 +146,7 @@ export function DatosProcesoSection({
                 type="time"
                 defaultValue="08:00"
                 onChange={onChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
             <div>
@@ -167,28 +157,24 @@ export function DatosProcesoSection({
                 type="time"
                 defaultValue="14:00"
                 onChange={onChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
           </div>
-        </section>
+        </div>
 
         {/* Responsables */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8">
-          <div>
-            <h4 className="text-[15px] font-bold text-slate-800 flex items-center gap-2.5 mb-1.5">
-              <div className="p-1 px-[5px] bg-sky-50 border border-sky-100 rounded-md shadow-sm">
-                <Users size={16} className="text-sky-600" />
-              </div>
+        <div className="flex flex-col md:flex-row gap-6 p-6">
+          <div className="md:w-1/3 shrink-0">
+            <h4 className="text-[14px] font-bold text-slate-800 flex items-center gap-2 mb-1.5">
+              <Users size={16} className="text-sky-600" />
               Responsables
             </h4>
-            <p className="text-[13px] text-slate-500 leading-relaxed pr-4">
-              Identifica al equipo y a los referentes encargados de la
-              operación, seguimiento y validación.
+            <p className="text-[12.5px] text-slate-500 leading-relaxed md:pr-4">
+              Equipo y referentes encargados de la operación.
             </p>
           </div>
-
-          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+          <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
             <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                 Responsable funcional <span className="text-rose-500">*</span>
@@ -198,7 +184,7 @@ export function DatosProcesoSection({
                 defaultValue={
                   process.lastEditedBy.includes("Andrea") ? "user1" : ""
                 }
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
                 <option value="">Seleccionar responsable...</option>
                 <option value="user1">Andrea M. (Analista Sr)</option>
@@ -208,11 +194,11 @@ export function DatosProcesoSection({
             </div>
             <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
-                Equipo responsable <span className="text-rose-500">*</span>
+                Equipo a cargo <span className="text-rose-500">*</span>
               </label>
               <select
                 onChange={onChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
                 <option value="">Seleccionar equipo...</option>
                 <option value="Conciliaciones">Conciliaciones</option>
@@ -227,12 +213,11 @@ export function DatosProcesoSection({
             </div>
             <div className="sm:col-span-2">
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
-                Supervisor / aprobador base{" "}
-                <span className="text-rose-500">*</span>
+                Supervisor / aprobador base <span className="text-rose-500">*</span>
               </label>
               <select
                 onChange={onChange}
-                className="w-full sm:w-1/2 px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full sm:w-1/2 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
                 <option value="">Seleccionar supervisor...</option>
                 <option value="sup1">Jefatura Conciliaciones</option>
@@ -241,25 +226,21 @@ export function DatosProcesoSection({
               </select>
             </div>
           </div>
-        </section>
+        </div>
 
         {/* Estado */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
-          <div>
-            <h4 className="text-[15px] font-bold text-slate-800 flex items-center gap-2.5 mb-1.5">
-              <div className="p-1 px-[5px] bg-slate-50 border border-slate-200 rounded-md shadow-sm">
-                <Activity size={16} className="text-slate-500" />
-              </div>
+        <div className="flex flex-col md:flex-row gap-6 p-6 bg-slate-50/30">
+          <div className="md:w-1/3 shrink-0">
+            <h4 className="text-[14px] font-bold text-slate-800 flex items-center gap-2 mb-1.5">
+              <Activity size={16} className="text-slate-500" />
               Estado y notas
             </h4>
-            <p className="text-[13px] text-slate-500 leading-relaxed pr-4">
-              Situación actual de la configuración general y espacio para
-              anotaciones funcionales.
+            <p className="text-[12.5px] text-slate-500 leading-relaxed md:pr-4">
+              Situación actual de la configuración y anotaciones adicionales.
             </p>
           </div>
-
-          <div className="md:col-span-2 grid grid-cols-1 gap-5">
-            <div className="sm:w-1/2">
+          <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+            <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                 Estado de configuración
               </label>
@@ -273,21 +254,21 @@ export function DatosProcesoSection({
                 </select>
               </div>
               <p className="text-[12px] text-slate-400 mt-1.5">
-                Calculado automáticamente por el nivel de completitud.
+                Calculado automáticamente.
               </p>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                 Observaciones
               </label>
               <textarea
                 onChange={onChange}
                 placeholder="Comentarios adicionales o notas relevantes (opcional)..."
-                className="w-full px-3.5 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all h-24 resize-none placeholder:text-slate-400"
+                className="w-full px-3.5 py-3 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all h-20 resize-none placeholder:text-slate-400"
               />
             </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

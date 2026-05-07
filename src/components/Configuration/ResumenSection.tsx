@@ -4,8 +4,6 @@ import {
   AlertCircle,
   AlertTriangle,
   Info,
-  CheckCircle2,
-  CircleDashed,
   ChevronRight,
   Activity,
   Clock,
@@ -20,9 +18,8 @@ interface ResumenSectionProps {
 export function ResumenSection({ onNavigate, process }: ResumenSectionProps) {
   // Mock data for demonstration
   const nextAction = {
-    title: "Definir campos de la fuente",
-    description:
-      'La fuente "Input" no tiene campos configurados para la conciliación.',
+    title: "Completar campos de la fuente “Input”",
+    description: "La fuente aún no tiene campos configurados para continuar.",
     sectionId: "fuentes",
     actionText: "Ir a Fuentes y campos",
   };
@@ -33,66 +30,21 @@ export function ResumenSection({ onNavigate, process }: ResumenSectionProps) {
       type: "error",
       message: "Falta configurar llave de cruce en estrategia 1 a 1.",
       sectionId: "estrategia",
+      moduleName: "Estrategia y reglas",
     },
     {
       id: 2,
       type: "warning",
       message: "Regla de tolerancia sin límite superior.",
       sectionId: "estrategia",
+      moduleName: "Estrategia y reglas",
     },
     {
       id: 3,
       type: "info",
       message: "Revisar formato de salida para reportes.",
       sectionId: "resultados",
-    },
-  ];
-
-  const sectionStatuses = [
-    {
-      id: "datos",
-      label: "Datos del proceso",
-      status: "complete",
-      textStatus: "Completo",
-    },
-    {
-      id: "fuentes",
-      label: "Fuentes y campos",
-      status: "incomplete",
-      textStatus: "Incompleto",
-      pending: "Faltan campos en 1 fuente",
-    },
-    {
-      id: "preparacion",
-      label: "Preparación de datos",
-      status: "not_started",
-      textStatus: "No iniciado",
-    },
-    {
-      id: "estrategia",
-      label: "Estrategia y reglas",
-      status: "not_started",
-      textStatus: "No iniciado",
-      pending: "Falta llave de cruce",
-    },
-    {
-      id: "diferencias",
-      label: "Gestión de diferencias",
-      status: "not_started",
-      textStatus: "No iniciado",
-    },
-    {
-      id: "resultados",
-      label: "Resultados y salidas",
-      status: "not_started",
-      textStatus: "No iniciado",
-    },
-    {
-      id: "publicacion",
-      label: "Publicación",
-      status: "locked",
-      textStatus: "Bloqueado",
-      pending: "Requiere completar configuración",
+      moduleName: "Resultados y salidas",
     },
   ];
 
@@ -117,23 +69,6 @@ export function ResumenSection({ onNavigate, process }: ResumenSectionProps) {
     },
   ];
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "complete":
-        return <CheckCircle2 size={16} className="text-secondary-dark" />;
-      case "incomplete":
-        return <AlertCircle size={16} className="text-amber-500" />;
-      case "not_started":
-        return <CircleDashed size={16} className="text-slate-300" />;
-      case "locked":
-        return (
-          <div className="w-4 h-4 rounded-full border-2 border-slate-200" />
-        );
-      default:
-        return null;
-    }
-  };
-
   const getPendingIcon = (type: string) => {
     switch (type) {
       case "error":
@@ -156,64 +91,65 @@ export function ResumenSection({ onNavigate, process }: ResumenSectionProps) {
       {/* Columna Izquierda (Principal) */}
       <div className="lg:col-span-2 flex flex-col gap-6">
         {/* Siguiente acción recomendada */}
-        <div className="bg-gradient-to-r from-primary/[0.03] to-transparent border border-primary/10 rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary/60 rounded-l-2xl"></div>
+        <div className="bg-primary/5 border border-primary/20 border-l-[3px] border-l-primary rounded-xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="bg-primary/10 p-1.5 rounded-md">
-                <ArrowRight size={14} className="text-primary" />
-              </div>
-              <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <ArrowRight size={14} className="text-primary" />
+              <h4 className="text-[11px] font-bold text-primary uppercase tracking-wider">
                 Siguiente paso sugerido
               </h4>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-1.5">
+            <h3 className="text-[15px] font-bold text-slate-900 leading-snug">
               {nextAction.title}
             </h3>
-            <p className="text-sm text-slate-600 max-w-lg">
+            <p className="text-[13px] text-slate-600 max-w-xl pr-4 mt-1">
               {nextAction.description}
             </p>
           </div>
           <button
             onClick={() => onNavigate(nextAction.sectionId)}
-            className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-all shadow-sm hover:shadow-md self-start sm:self-center"
+            className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white text-slate-800 text-[13px] font-bold rounded-lg hover:bg-slate-50 transition-all border border-slate-200 self-start sm:self-center shadow-sm hover:shadow"
           >
             {nextAction.actionText}
-            <ChevronRight size={16} />
+            <ChevronRight size={14} className="text-slate-400" />
           </button>
         </div>
 
-        {/* Pendientes críticos */}
-        <div className="bg-white border border-rose-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-rose-50 flex items-center justify-between bg-white relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-rose-400"></div>
+        {/* Pendientes por resolver */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
-              <div className="p-1 px-[5px] bg-rose-50 rounded-md">
-                <AlertCircle size={16} className="text-rose-500" />
+              <div className="p-1 px-[5px] bg-slate-50 border border-slate-100 rounded-md shadow-sm">
+                <AlertCircle size={16} className="text-slate-500" />
               </div>
-              Pendientes críticos
+              Pendientes por resolver
             </h3>
-            <span className="text-xs font-bold px-3 py-1 bg-rose-50 text-rose-600 rounded-lg">
-              {pendingItems.filter((i) => i.type === "error").length}{" "}
-              bloqueantes
+            <span className="text-xs font-bold px-2.5 py-0.5 bg-rose-50 text-rose-600 rounded-full border border-rose-100">
+              {pendingItems.filter((i) => i.type === "error").length} bloqueantes
             </span>
           </div>
-          <div className="p-2 space-y-1 bg-slate-50/30">
+          <div className="p-1.5 space-y-1 bg-slate-50/50">
             {pendingItems.map((item) => (
               <div
                 key={item.id}
                 onClick={() => onNavigate(item.sectionId)}
-                className="p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white rounded-xl cursor-pointer transition-all hover:shadow-sm border border-transparent hover:border-slate-200 group"
+                className="p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-lg cursor-pointer transition-all hover:shadow-sm border border-transparent hover:border-slate-200 group"
               >
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 shrink-0 bg-white p-1 rounded-md shadow-sm border border-slate-100">
+                  <div className="mt-0.5 shrink-0 bg-slate-50 p-1 rounded border border-slate-100">
                     {getPendingIcon(item.type)}
                   </div>
-                  <p className="text-sm font-medium text-slate-700 leading-snug pt-1">
-                    {item.message}
-                  </p>
+                  <div className="pt-0.5">
+                    <p className="text-[13px] font-medium text-slate-800 leading-snug mb-0.5">
+                      {item.message}
+                    </p>
+                    <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                      {item.moduleName}
+                    </p>
+                  </div>
                 </div>
-                <button className="text-[13px] text-slate-400 font-medium group-hover:text-primary transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100 shrink-0 bg-slate-50 group-hover:bg-primary/5 px-2.5 py-1 rounded-md">
+                <button className="text-[12px] font-bold text-slate-500 group-hover:text-primary transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100 shrink-0 bg-slate-50 group-hover:bg-primary/5 px-2 py-1.5 rounded-md border border-slate-100 group-hover:border-primary/20">
                   Resolver <ChevronRight size={14} />
                 </button>
               </div>
@@ -221,171 +157,98 @@ export function ResumenSection({ onNavigate, process }: ResumenSectionProps) {
           </div>
         </div>
 
-        {/* Estado por sección */}
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
-              <div className="p-1 px-[5px] bg-slate-50 border border-slate-100 rounded-md shadow-sm">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-              </div>
-              Estado de configuración
-            </h3>
+        {/* Resultado de la última validación */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+          <div className="p-5 flex-1 relative overflow-hidden bg-gradient-to-br from-emerald-50/50 to-transparent">
+            <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Última validación</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <h3 className="text-sm font-semibold text-emerald-800">Exitosa (con advertencias)</h3>
+            </div>
+            <p className="text-[13px] text-slate-500 mb-4">Ejecutada sobre fuente "Input" mostrando un 98% de completitud y 2% de datos anómalos.</p>
+            <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+              <Clock size={12} />
+              Hace 2 horas por Sistema
+            </p>
           </div>
-          <div className="p-2 space-y-1 bg-slate-50/50">
-            {sectionStatuses.map((section) => (
-              <div
-                key={section.id}
-                onClick={() => onNavigate(section.id)}
-                className="flex items-center justify-between p-3 px-4 hover:bg-white rounded-xl cursor-pointer transition-all hover:shadow-sm border border-transparent hover:border-slate-200 group"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="bg-white p-1 rounded-md shadow-sm border border-slate-100 shrink-0">
-                    {getStatusIcon(section.status)}
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-semibold text-slate-700 leading-tight">
-                      {section.label}
-                    </p>
-                    {section.pending && (
-                      <p className="text-[12px] text-slate-500 mt-0.5">
-                        {section.pending}
-                      </p>
-                    )}
-                  </div>
+          <div className="p-5 flex-1 bg-white flex flex-col justify-center">
+            <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Resultados en muestra (fuente "Input")</h4>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between items-center mb-1 text-[12px]">
+                  <span className="text-slate-600 font-medium">Completitud</span>
+                  <span className="text-slate-800 font-bold">98%</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span
-                    className={`text-[12px] font-bold px-2.5 py-1 rounded-lg ${
-                      section.status === "complete"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : section.status === "incomplete"
-                          ? "bg-amber-50 text-amber-700"
-                          : section.status === "locked"
-                            ? "bg-slate-100 text-slate-500"
-                            : "bg-slate-50 text-slate-400"
-                    }`}
-                  >
-                    {section.textStatus}
-                  </span>
-                  <ChevronRight
-                    size={16}
-                    className="text-slate-300 group-hover:text-primary transition-colors"
-                  />
+                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '98%' }}></div>
                 </div>
               </div>
-            ))}
+              <div>
+                <div className="flex justify-between items-center mb-1 text-[12px]">
+                  <span className="text-slate-600 font-medium">Datos anómalos</span>
+                  <span className="text-slate-800 font-bold">2%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: '2%' }}></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Columna Derecha (Contexto) */}
+      {/* Columna Derecha (Lateral) */}
       <div className="flex flex-col gap-6">
-        {/* Contexto del proceso */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-full -mr-10 -mt-10 pointer-events-none"></div>
-          <h3 className="font-semibold text-slate-800 mb-6 flex items-center gap-2.5 relative">
+        {/* Configuración clave */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 relative overflow-hidden">
+          <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2.5">
             <div className="p-1 px-[5px] bg-slate-50 border border-slate-100 rounded-md shadow-sm">
               <Activity size={16} className="text-slate-500" />
             </div>
-            Contexto del proceso
+            Configuración clave
           </h3>
 
-          <div className="space-y-6 relative">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-[13px]">
+              <span className="text-slate-500 font-medium">Fuentes</span>
+              <span className="font-semibold text-slate-800">{process.sources?.length || 0}</span>
+            </div>
+            <div className="flex justify-between items-center text-[13px]">
+              <span className="text-slate-500 font-medium">Estrategia</span>
+              <span className="font-semibold text-slate-800">{process.strategy || "No definida"}</span>
+            </div>
+            <div className="flex justify-between items-center text-[13px]">
+              <span className="text-slate-500 font-medium">F. rectora</span>
+              <span className="font-semibold text-slate-800 truncate pl-2 max-w-[140px]" title={process.rectorSource || "Ninguna"}>
+                {process.rectorSource || "Ninguna"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Estado de publicación */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 relative overflow-hidden">
+          <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2.5">
+            <div className="p-1 px-[5px] bg-slate-50 border border-slate-100 rounded-md shadow-sm">
+              <Info size={16} className="text-slate-500" />
+            </div>
+            Estado de publicación
+          </h3>
+
+          <div className="space-y-4">
             <div>
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                Configuración
-              </h4>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">
-                    Fuentes configuradas
-                  </span>
-                  <span className="font-bold text-slate-800 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                    {process.sources?.length || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">Estrategia</span>
-                  <span className="font-semibold text-slate-800">
-                    {process.strategy || "No definida"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px] border-b border-transparent">
-                  <span className="text-slate-500 font-medium">
-                    Fuente rectora
-                  </span>
-                  <span
-                    className="font-semibold text-slate-800 truncate pl-4 text-right max-w-[150px]"
-                    title={process.rectorSource || "Ninguna"}
-                  >
-                    {process.rectorSource || "Ninguna"}
-                  </span>
-                </div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Borrador actual</p>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                <span className="text-[13px] font-semibold text-slate-800">Con bloqueantes</span>
               </div>
             </div>
-
-            <div className="pt-5 border-t border-slate-100">
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                Motor
-              </h4>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">
-                    Reglas activas
-                  </span>
-                  <span className="font-bold text-slate-800 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                    0
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">
-                    Tratamientos
-                  </span>
-                  <span className="font-semibold text-slate-400">
-                    No configurados
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">Salidas</span>
-                  <span className="font-semibold text-amber-600 bg-amber-50 px-2 rounded w-fit">
-                    Pendiente
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-5 border-t border-slate-100">
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                Control
-              </h4>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">
-                    Versión publicada
-                  </span>
-                  <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                    Activa
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">
-                    Borrador actual
-                  </span>
-                  <span className="font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100 hidden sm:block">
-                    Con bloqueantes
-                  </span>
-                  <span className="font-semibold text-rose-600 sm:hidden">
-                    Bloqueantes
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-slate-500 font-medium">
-                    Última validación
-                  </span>
-                  <span className="font-semibold text-slate-800">
-                    12/04/2026
-                  </span>
-                </div>
+            
+            <div className="pt-3 border-t border-slate-100">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Versión activa</p>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span className="text-[13px] font-medium text-slate-600">v1.2 (Publicada 10/03/26)</span>
               </div>
             </div>
           </div>
