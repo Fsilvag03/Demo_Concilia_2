@@ -1,0 +1,216 @@
+115-  formatoFechaOrigen?: string;
+116-  formatoNumero?: string;
+117-  valoresVacios?: string[];
+118-
+119-  // New fields for specific transformations
+120:  campoDestino?: string | string[];
+121-  metodoExtraccion?: string;
+122-  parametrosExtraccion?: string;
+123-  delimitador?: string;
+124-  posicionInicial?: string;
+125-  longitud?: string;
+--
+246-    fuente: "Banco",
+247-    campo: "concepto",
+248-    tipo: "Transformación",
+249-    subTipo: "Extraer valor de un campo",
+250-    metodoExtraccion: "Por patrón (Regex)",
+251:    campoDestino: "orden_extraida",
+252-    activa: true,
+253-  },
+254-  {
+255-    id: "t2",
+256-    nombre: "Calcular monto neto",
+--
+258-    fuente: "Cash Pagos",
+259-    campo: ["monto", "comision"],
+260-    tipo: "Transformación",
+261-    subTipo: "Crear campo calculado",
+262-    operadorCalculo: "Resta",
+263:    campoDestino: "monto_neto",
+264-    activa: false,
+265-  },
+266-  {
+267-    id: "t3",
+268-    nombre: "Clasificar movimientos",
+--
+271-    campo: "monto",
+272-    tipo: "Transformación",
+273-    subTipo: "Clasificar registros",
+274-    condicionClasificacion: "",
+275-    valorAsignado: "",
+276:    campoDestino: "",
+277-    activa: true,
+278-  },
+279-  {
+280-    id: "t4",
+281-    nombre: "Excluir consultas sin costo",
+--
+316-
+317-      switch (r.subTipo as TransformationType) {
+318-        case "Extraer valor de un campo":
+319-          if (!r.campo || r.campo.length === 0) return false;
+320-          if (!r.metodoExtraccion) return false;
+321:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+322-          break;
+323-        case "Separar campo en varios":
+324-          if (!r.campo || r.campo.length === 0) return false;
+325-          if (!r.metodoExtraccion) return false;
+326-          if (!r.delimitador) return false;
+327:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+328-          break;
+329-        case "Unir campos":
+330-          if (!r.campo || r.campo.length === 0) return false;
+331-          if (r.separador === undefined) return false;
+332:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+333-          break;
+334-        case "Crear campo calculado":
+335-          if (!r.campo || r.campo.length === 0) return false;
+336-          if (!r.operadorCalculo) return false;
+337:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+338-          break;
+339-        case "Ajustar signo o naturaleza del monto":
+340-          if (!r.campo || r.campo.length === 0) return false;
+341-          if (!r.criterioAjuste) return false;
+342:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+343-          break;
+344-        case "Clasificar registros":
+345-          if (!r.condicionClasificacion) return false;
+346-          if (!r.valorAsignado) return false;
+347:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+348-          break;
+349-        case "Derivar fecha":
+350-          if (!r.campo || r.campo.length === 0) return false;
+351-          if (!r.reglaDerivacionFecha) return false;
+352:          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+353-          break;
+354-        case "Excluir registros de la conciliación":
+355-          if (!r.condicionExclusion) return false;
+356-          if (!r.motivoExclusion) return false;
+357-          break;
+--
+737-      if (regla.tipo === 'Transformación') {
+738-        const d = (c: any) => Array.isArray(c) ? c.join(', ') : c;
+739-        
+740-        switch (regla.subTipo as TransformationType) {
+741-          case 'Extraer valor de un campo':
+742:            return `extraer ${regla.metodoExtraccion} a ${d(regla.campoDestino)}`;
+743-          case 'Separar campo en varios':
+744:            return `separar por ${regla.delimitador || 'delimitador'} a ${d(regla.campoDestino)}`;
+745-          case 'Unir campos':
+746:            return `unir a ${d(regla.campoDestino)}`;
+747-          case 'Crear campo calculado':
+748:            return `calcular ${d(regla.campoDestino)} con ${regla.operadorCalculo}`;
+749-          case 'Ajustar signo o naturaleza del monto':
+750:            return `ajustar signo a ${d(regla.campoDestino)}`;
+751-          case 'Clasificar registros':
+752:            return `clasificar como ${regla.valorAsignado} a ${d(regla.campoDestino)}`;
+753-          case 'Derivar fecha':
+754:            return `derivar a ${d(regla.campoDestino)} (${regla.reglaDerivacionFecha})`;
+755-          case 'Excluir registros de la conciliación':
+756-            return `excluir. Motivo: ${regla.motivoExclusion}`;
+757-        }
+758-        return regla.accion || regla.subTipo || 'transformación';
+759-      }
+--
+1899-                                  <input type="text" value={formData.delimitador || ""} onChange={e => setFormData({...formData, delimitador: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" placeholder="Ej. -" />
+1900-                                </div>
+1901-                              )}
+1902-                              <div>
+1903-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo destino <span className="text-rose-500">*</span></label>
+1904:                                <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value})} placeholder="Ej. orden_extraida" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1905-                              </div>
+1906-                            </div>
+1907-                          )}
+1908-
+1909-                          {formData.subTipo === 'Separar campo en varios' && (
+--
+1916-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Delimitador o regla <span className="text-rose-500">*</span></label>
+1917-                                <input type="text" value={formData.delimitador || ""} onChange={e => setFormData({...formData, delimitador: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" placeholder="Ej. -" />
+1918-                              </div>
+1919-                              <div>
+1920-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campos destino (separados por coma) <span className="text-rose-500">*</span></label>
+1921:                                <input type="text" value={formData.campoDestino ? (Array.isArray(formData.campoDestino) ? formData.campoDestino.join(', ') : formData.campoDestino) : ""} onChange={e => setFormData({...formData, campoDestino: e.target.value.split(',').map(s=>s.trim())})} placeholder="Ej. orden, nombre_empresa" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1922-                              </div>
+1923-                            </div>
+1924-                          )}
+1925-
+1926-                          {formData.subTipo === 'Unir campos' && (
+--
+1933-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Separador</label>
+1934-                                <input type="text" value={formData.separador || ""} onChange={e => setFormData({...formData, separador: e.target.value})} placeholder="Ej. - (dejar vacío si no aplica)" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1935-                              </div>
+1936-                              <div>
+1937-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo destino <span className="text-rose-500">*</span></label>
+1938:                                <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value})} placeholder="Ej. llave_conciliacion" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1939-                              </div>
+1940-                            </div>
+1941-                          )}
+1942-
+1943-                          {formData.subTipo === 'Crear campo calculado' && (
+--
+1960-                                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+1961-                                </div>
+1962-                              </div>
+1963-                              <div>
+1964-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo destino <span className="text-rose-500">*</span></label>
+1965:                                <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value})} placeholder="Ej. monto_neto" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1966-                              </div>
+1967-                            </div>
+1968-                          )}
+1969-
+1970-                          {formData.subTipo === 'Ajustar signo o naturaleza del monto' && (
+--
+1981-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo de apoyo</label>
+1982-                                <input type="text" value={formData.campoApoyo || ""} onChange={e => setFormData({...formData, campoApoyo: e.target.value})} placeholder="Ej. tipo_movimiento" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1983-                              </div>
+1984-                              <div>
+1985-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo destino <span className="text-rose-500">*</span></label>
+1986:                                <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value})} placeholder="Ej. monto_ajustado" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+1987-                              </div>
+1988-                            </div>
+1989-                          )}
+1990-
+1991-                          {formData.subTipo === 'Clasificar registros' && (
+--
+1998-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor asignado <span className="text-rose-500">*</span></label>
+1999-                                <input type="text" value={formData.valorAsignado || ""} onChange={e => setFormData({...formData, valorAsignado: e.target.value})} placeholder="Ej. sobrante" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+2000-                              </div>
+2001-                              <div>
+2002-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo destino <span className="text-rose-500">*</span></label>
+2003:                                <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value})} placeholder="Ej. categoria" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+2004-                              </div>
+2005-                            </div>
+2006-                          )}
+2007-
+2008-                          {formData.subTipo === 'Derivar fecha' && (
+--
+2032-                                  </div>
+2033-                                )}
+2034-                              </div>
+2035-                              <div>
+2036-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo destino <span className="text-rose-500">*</span></label>
+2037:                                <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value})} placeholder="Ej. fecha_caida" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm" />
+2038-                              </div>
+2039-                            </div>
+2040-                          )}
+2041-
+2042-                          {formData.subTipo === 'Excluir registros de la conciliación' && (
+--
+2059-                                 {formData.subTipo 
+2060-                                   ? (() => {
+2061-                                       const d = (c: any) => Array.isArray(c) && c.length > 0 ? c.join(', ') : (c || "[destino]");
+2062-                                       const orig = Array.isArray(formData.campo) && formData.campo.length > 0 ? formData.campo.join(', ') : (formData.campo || "[origen]");
+2063-                                       switch(formData.subTipo) {
+2064:                                         case 'Extraer valor de un campo': return `Desde ${orig} se extraerá la información y se guardará en ${d(formData.campoDestino)}`;
+2065:                                         case 'Separar campo en varios': return `El campo ${orig} se separará en ${d(formData.campoDestino)}`;
+2066:                                         case 'Unir campos': return `Los campos ${orig} se unirán en ${d(formData.campoDestino)}`;
+2067:                                         case 'Crear campo calculado': return `Se calculará ${d(formData.campoDestino)} usando ${orig}`;
+2068:                                         case 'Ajustar signo o naturaleza del monto': return `El campo ${d(formData.campoDestino)} se calculará aplicando signo según ${formData.criterioAjuste || "[criterio]"}`;
+2069:                                         case 'Clasificar registros': return `Los registros con ${formData.condicionClasificacion || "[condición]"} se clasificarán como ${formData.valorAsignado || "[valor]"} en ${d(formData.campoDestino)}`;
+2070:                                         case 'Derivar fecha': return `Se generará ${d(formData.campoDestino)} en base a ${orig}`;
+2071-                                         case 'Excluir registros de la conciliación': return `Los registros con ${formData.condicionExclusion || "[condición]"} se excluirán del cruce. Motivo: ${formData.motivoExclusion || "[motivo]"}`;
+2072-                                         default: return "Configuración no completada";
+2073-                                       }
+2074-                                     })()
+2075-                                   : "Seleccione una operación para ver el resultado esperado"}

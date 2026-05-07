@@ -27,9 +27,12 @@ import {
   ArrowLeft,
   Check,
   Power,
-  ListFilter
+  ListFilter,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import type { Process } from "./ProcessCard";
+import { PreviewTestModal } from "./PreviewTestModal";
 
 interface PreparacionDatosSectionProps {
   process: Process;
@@ -67,9 +70,32 @@ export type NormalizationType =
   | "Normalizar número o monto"
   | "Normalizar valores vacíos";
 
-export type TransformationType = string;
+export type TransformationType = 
+  | "Extraer valor de un campo"
+  | "Separar campo en varios campos"
+  | "Unir campos"
+  | "Crear campo calculado"
+  | "Ajustar signo o naturaleza del monto"
+  | "Clasificar registros"
+  | "Derivar fecha"
+  | "Excluir registros del cruce";
 
-interface ReglaPreparacion {
+interface CampoDestinoDef {
+  nombre: string;
+  etiqueta?: string;
+  tipo: string;
+  descripcion?: string;
+  segmentoOrigen?: string;
+  posicionInicial?: string;
+  longitud?: string;
+}
+
+interface EquivalenciaSigno {
+  valor: string;
+  accion: string;
+}
+
+export interface ReglaPreparacion {
   id: string;
   nombre: string;
   descripcion: string;
@@ -77,12 +103,13 @@ interface ReglaPreparacion {
   campo: string | string[];
   tipo: TipoRegla;
   subTipo?: ValidationType | NormalizationType | TransformationType | string;
-  accion: string;
+  accion?: string;
   activa: boolean;
-  nivel: NivelRegla;
-  mensaje: string;
+  nivel?: NivelRegla;
+  mensaje?: string;
   criterio?: string;
   dependenciaInactiva?: boolean;
+  orden?: number;
 
   // New fields for specific validations
   condicionMonto?: string;
@@ -105,6 +132,52 @@ interface ReglaPreparacion {
   formatoFechaOrigen?: string;
   formatoNumero?: string;
   valoresVacios?: string[];
+
+  // New fields for specific transformations
+  campoDestino?: string | string[];
+  campoDestinoNombre?: string;
+  campoDestinoEtiqueta?: string;
+  campoDestinoTipoDato?: string;
+  campoDestinoDesc?: string;
+  metodoExtraccion?: string;
+  parametrosExtraccion?: string;
+  delimitador?: string;
+  posicionInicial?: string;
+  longitud?: string;
+  segmentoAExtraer?: string;
+  numeroSegmento?: string;
+  textoReferencia?: string;
+  patronExtraccion?: string;
+  descripcionPatron?: string;
+  separador?: string;
+  operadorCalculo?: string;
+  valorConstante?: string;
+  criterioAjuste?: string;
+  campoApoyo?: string;
+  condicionClasificacion?: string;
+  valorAsignado?: string;
+  reglaDerivacionFecha?: string;
+  cantidadDias?: number | string;
+  condicionExclusion?: string;
+  motivoExclusion?: string;
+
+  metodoSeparacion?: string;
+  longitudesFragmentos?: string;
+  tipoCalculo?: string;
+  campoARestar?: string;
+  campoOperador?: string;
+  primerCampo?: string;
+  segundoCampo?: string;
+  operacionConstante?: string;
+  valorConstanteCalculo?: string;
+  criterioAjusteSigno?: string;
+  campoIndicador?: string;
+  equivalenciasSigno?: EquivalenciaSigno[];
+  operadorCondicion?: string;
+  valorCondicion?: string;
+  valorCondicionMin?: string;
+  valorCondicionMax?: string;
+  baseFecha?: string;
 }
 
 const mockReglas: ReglaPreparacion[] = [
@@ -133,7 +206,7 @@ const mockReglas: ReglaPreparacion[] = [
     subTipo: "Fecha válida",
     comparacionFecha: "Mismo día operativo",
     accion: "",
-    activa: true,
+    activa: false,
     nivel: "Advertencia",
     mensaje: "El campo fecha_pago no corresponde al día operativo.",
   },
@@ -142,7 +215,7 @@ const mockReglas: ReglaPreparacion[] = [
     nombre: "Control de duplicidad de transacciones",
     descripcion: "No debe haber registros duplicados en fecha_transaccion y monto para Banred.",
     fuente: "Banred",
-    campo: ["fecha_transaccion", "monto"],
+    campo: "",
     tipo: "Validación",
     subTipo: "Duplicidad",
     accion: "",
@@ -163,6 +236,7 @@ const mockReglas: ReglaPreparacion[] = [
     activa: true,
     nivel: "Fuerte",
     mensaje: "El extracto bancario no contiene registros para procesar.",
+    dependenciaInactiva: true,
   },
   {
     id: "n1",
@@ -184,7 +258,7 @@ const mockReglas: ReglaPreparacion[] = [
     tipo: "Normalización",
     subTipo: "Cambiar mayúsculas/minúsculas",
     modoMayusculas: "Convertir a mayúsculas",
-    activa: true,
+    activa: false,
   },
   {
     id: "n3",
@@ -194,7 +268,7 @@ const mockReglas: ReglaPreparacion[] = [
     campo: "fecha_transaccion",
     tipo: "Normalización",
     subTipo: "Normalizar fecha",
-    formatoFechaOrigen: "DD/MM/YYYY",
+    formatoFechaOrigen: "",
     activa: true,
   },
   {
@@ -207,6 +281,59 @@ const mockReglas: ReglaPreparacion[] = [
     subTipo: "Normalizar número o monto",
     formatoNumero: "Separador decimal: Coma (1.234,56)",
     activa: true,
+    dependenciaInactiva: true,
+  },
+  {
+    id: "t1",
+    nombre: "Extraer orden de descripción",
+    descripcion: "Obtiene el código de la orden contenido dentro del campo concepto.",
+    fuente: "Banco",
+    campo: "concepto",
+    tipo: "Transformación",
+    subTipo: "Extraer valor de un campo",
+    metodoExtraccion: "Por patrón (Regex)",
+    campoDestino: "orden_extraida",
+    activa: true,
+  },
+  {
+    id: "t2",
+    nombre: "Calcular monto neto",
+    descripcion: "Resta la comisión al monto para obtener el valor neto de la operación.",
+    fuente: "Cash Pagos",
+    campo: ["monto", "comision"],
+    tipo: "Transformación",
+    subTipo: "Crear campo calculado",
+    operadorCalculo: "Resta",
+    campoDestino: "monto_neto",
+    activa: false,
+  },
+  {
+    id: "t3",
+    nombre: "Clasificar movimientos",
+    descripcion: "Clasifica el registro como sobrante o faltante según el signo del monto.",
+    fuente: "Banco",
+    campo: "monto",
+    tipo: "Transformación",
+    subTipo: "Clasificar registros",
+    condicionClasificacion: "",
+    valorAsignado: "",
+    campoDestino: "",
+    activa: true,
+  },
+  {
+    id: "t4",
+    nombre: "Excluir consultas sin costo",
+    descripcion: "Elimina del cruce los registros que tengan monto 0, que corresponden a consultas.",
+    fuente: "Banred",
+    campo: "monto",
+    tipo: "Transformación",
+    subTipo: "Excluir registros del cruce",
+    condicionExclusion: "Monto igual a 0",
+    operadorCondicion: "Igual a",
+    valorCondicion: "0",
+    motivoExclusion: "Consultas sin costo",
+    activa: true,
+    dependenciaInactiva: true,
   },
 ];
 
@@ -223,12 +350,429 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
   const [filterStatus, setFilterStatus] = useState<"Todas" | "Activas" | "Inactivas" | "Incompletas" | "Con error">("Todas");
   const [groupBySource, setGroupBySource] = useState(false);
   const [unpublishedRuleIds, setUnpublishedRuleIds] = useState<Set<string>>(new Set());
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  
+  const [isCreatingDestino, setIsCreatingDestino] = useState(false);
+  const [newDestinoState, setNewDestinoState] = useState({ id: '', type: 'Texto', label: '' });
+
+  const getAvailableFieldsList = (fuenteFiltro?: string | string[]) => {
+    const baseFields: { id: string; source: string; type: string; fuenteApp?: string | string[]; orden?: number }[] = [
+      { id: "monto", source: "Fuente", type: "base" },
+      { id: "fecha_transaccion", source: "Fuente", type: "base" },
+      { id: "referencia", source: "Fuente", type: "base" },
+      { id: "id_cliente", source: "Fuente", type: "base" },
+      { id: "estado", source: "Fuente", type: "base" },
+      { id: "fecha_valor", source: "Fuente", type: "base" },
+      { id: "concepto", source: "Fuente", type: "base" },
+      { id: "comision", source: "Fuente", type: "base" },
+      { id: "nombre", source: "Fuente", type: "base" },
+    ];
+    
+    const normalizedFields = new Set<string>();
+    for (const r of reglas) {
+      if (editingRegla && r.id === editingRegla.id) break;
+      if (r.tipo === 'Normalización' && r.activa && isRuleComplete(r)) {
+        if (Array.isArray(r.campo)) r.campo.forEach(c => normalizedFields.add(c));
+        else if (r.campo) r.campo.split(',').map(s=>s.trim()).forEach(c => normalizedFields.add(c));
+      }
+    }
+
+    baseFields.forEach(f => {
+      if (normalizedFields.has(f.id)) {
+        f.source = "Fuente normalizada";
+        f.type = "normalizado";
+      }
+    });
+
+    const derivedFields: { id: string, source: string, type: string, fuenteApp?: string | string[], orden?: number }[] = [];
+    
+    // Sort rules by order first to ensure proper step numbering
+    const sortedTransformations = [...reglas].filter(r => r.tipo === 'Transformación' && r.activa && isRuleComplete(r)).sort((a, b) => (a.orden || 1) - (b.orden || 1));
+    
+    // Counter for steps based on source
+    const stepsBySource: Record<string, number> = {};
+
+    for (const r of sortedTransformations) {
+      if (editingRegla && r.id === editingRegla.id) break;
+      
+      const sourceKey = Array.isArray(r.fuente) ? r.fuente.join(',') : (r.fuente || 'default');
+      stepsBySource[sourceKey] = (stepsBySource[sourceKey] || 0) + 1;
+      const step = stepsBySource[sourceKey];
+
+      if (r.campoDestino) {
+        if (Array.isArray(r.campoDestino)) {
+          r.campoDestino.forEach(c => derivedFields.push({ id: c, source: r.nombre, type: "derivado", fuenteApp: r.fuente, orden: step }));
+        } else {
+          derivedFields.push({ id: r.campoDestino, source: r.nombre, type: "derivado", fuenteApp: r.fuente, orden: step });
+        }
+      }
+    }
+    
+    let deduplicated: { id: string; source: string; type: string; fuenteApp?: string | string[]; orden?: number }[] = [...baseFields];
+    for (const d of derivedFields) {
+      if (!deduplicated.find(f => f.id === d.id)) deduplicated.push(d);
+    }
+    
+    // Solo mostramos campos base para todas las fuentes (mock)
+    // Pero si un campo es extra, lo filtramos por la fuente
+    if (fuenteFiltro && !Array.isArray(fuenteFiltro) && fuenteFiltro !== "") {
+      deduplicated = deduplicated.filter(f => f.type !== "derivado" || f.fuenteApp === fuenteFiltro || (Array.isArray(f.fuenteApp) && f.fuenteApp.includes(fuenteFiltro)));
+    }
+    return deduplicated;
+  };
+
+  const renderCampoOrigen = (multiple: boolean = false) => {
+    const fields = getAvailableFieldsList(formData.fuente);
+    if (multiple) {
+      const selectedFields = Array.isArray(formData.campo) ? formData.campo : (typeof formData.campo === 'string' && formData.campo ? formData.campo.split(',').map(s=>s.trim()) : []);
+      
+      const handleFieldSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val && !selectedFields.includes(val)) {
+           setFormData({...formData, campo: [...selectedFields, val]});
+        }
+        e.target.value = ""; // reset
+      };
+      
+      const handleRemoveField = (f: string) => {
+        setFormData({...formData, campo: selectedFields.filter(x => x !== f)});
+      };
+
+      return (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Campos origen <span className="text-rose-500">*</span></label>
+          <div className="flex flex-col gap-3">
+            {selectedFields.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedFields.map(f => {
+                   const fDef = fields.find(x => x.id === f);
+                   return (
+                     <div key={f} className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 text-sm">
+                       <span className="font-medium">{f}</span>
+                       <span className={`text-[10px] ${fDef?.type === 'derivado' ? 'text-amber-600' : fDef?.type === 'normalizado' ? 'text-blue-600' : 'text-slate-500'}`}>
+                         ({fDef ? (fDef.type === 'derivado' ? 'Derivado' : fDef.source) : 'Desconocido'})
+                       </span>
+                       <button type="button" onClick={() => handleRemoveField(f)} className="hover:text-primary/70 ml-1">
+                         <X size={14} />
+                       </button>
+                     </div>
+                   );
+                })}
+              </div>
+            )}
+            <div className="relative">
+              <select onChange={handleFieldSelect} defaultValue="" className={`w-full px-3 py-2 border rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(selectedFields.length === 0) || 'border-slate-300'}`}>
+                <option value="">Añadir campo...</option>
+                {fields.filter(f => !selectedFields.includes(f.id)).map(f => (
+                  <option key={f.id} value={f.id}>{f.id} ({f.type === 'derivado' ? 'Derivado(Transformación)' : f.source})</option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo origen <span className="text-rose-500">*</span></label>
+        <div className="relative">
+          <select 
+            disabled={!formData.fuente || formData.fuente.length === 0}
+            value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""} 
+            onChange={(e) => setFormData({...formData, campo: e.target.value})} 
+            className={`w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none ${(!formData.fuente || formData.fuente.length === 0) ? 'text-slate-400 bg-slate-50 cursor-not-allowed' : 'text-slate-800 cursor-pointer'} ${getFieldErrorClass(!formData.campo || formData.campo.length === 0) || 'border-slate-300'}`}
+          >
+            {(!formData.fuente || formData.fuente.length === 0) ? (
+              <option value="">Selecciona una fuente para ver sus campos disponibles.</option>
+            ) : (
+              <>
+                <option value="">Seleccione un campo...</option>
+                {fields.map(f => {
+                   let label = f.source;
+                   if (f.type === 'derivado') {
+                      label = `Derivado · Paso ${f.orden || 1}`;
+                   }
+                   return (
+                     <option key={f.id} value={f.id}>{f.id} ({label})</option>
+                   );
+                })}
+              </>
+            )}
+          </select>
+          <ChevronDown size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${(!formData.fuente || formData.fuente.length === 0) ? 'text-slate-300' : 'text-slate-400'}`} />
+        </div>
+      </div>
+    );
+  };
+
+  const renderCampoDestino = (multiple: boolean = false) => {
+    const allFields = getAvailableFieldsList();
+    const derivedFields = allFields.filter(f => f.type === 'derivado');
+
+    if (multiple) {
+      const selected = Array.isArray(formData.campoDestino) ? formData.campoDestino : (formData.campoDestino ? (formData.campoDestino as string).split(',').map(s=>s.trim()) : []);
+      
+      const handleAddMultiple = () => {
+        if (newDestinoState.id) {
+          if (!selected.includes(newDestinoState.id)) {
+             setFormData({...formData, campoDestino: [...selected, newDestinoState.id]});
+          }
+          setIsCreatingDestino(false);
+          setNewDestinoState({ id: '', type: 'Texto', label: '' });
+        }
+      };
+      
+      const handleRemoveMultiple = (f: string) => {
+          setFormData({...formData, campoDestino: selected.filter(x => x !== f)});
+      };
+
+      return (
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h5 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Campos Destino <span className="text-rose-500">*</span>
+              </h5>
+              {!isCreatingDestino && (
+                <button type="button" onClick={() => setIsCreatingDestino(true)} className="text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/5 px-2 py-1 rounded">
+                  <Plus size={14} /> Añadir campo nuevo
+                </button>
+              )}
+            </div>
+            
+            {selected.length > 0 && !isCreatingDestino && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {selected.map(f => (
+                  <div key={f} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-2.5 py-1.5 rounded-lg text-[13px] font-medium shadow-sm">
+                    {f}
+                    <button type="button" onClick={() => handleRemoveMultiple(f)} className="hover:text-rose-500 transition-colors ml-1">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {isCreatingDestino ? (
+              <div className="bg-white border text-sm border-primary/20 rounded-lg p-4 space-y-3 mt-2 shadow-sm">
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-700 mb-1">Nombre técnico (ID) <span className="text-rose-500">*</span></label>
+                  <input type="text" value={newDestinoState.id} onChange={e => setNewDestinoState({...newDestinoState, id: e.target.value.toLowerCase().replace(/\s+/g, '_')})} placeholder="Ej. orden_extraida" className="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[12px] font-medium text-slate-700 mb-1">Tipo de dato</label>
+                    <select value={newDestinoState.type} onChange={e => setNewDestinoState({...newDestinoState, type: e.target.value})} className="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                      <option value="Texto">Texto</option>
+                      <option value="Número">Número</option>
+                      <option value="Fecha">Fecha</option>
+                      <option value="Booleano">Booleano</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-slate-700 mb-1">Etiqueta visible</label>
+                    <input type="text" value={newDestinoState.label} onChange={e => setNewDestinoState({...newDestinoState, label: e.target.value})} placeholder="Ej. Orden extraída" className="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-3 border-t border-slate-100 mt-2">
+                  <button type="button" onClick={handleAddMultiple} disabled={!newDestinoState.id} className="px-3 py-1.5 bg-primary text-white text-[12px] font-medium rounded hover:bg-primary/90 transition-colors disabled:opacity-50">
+                    Guardar y añadir
+                  </button>
+                  <button type="button" onClick={() => setIsCreatingDestino(false)} className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[12px] font-medium rounded hover:bg-slate-200 transition-colors">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative mt-2">
+                <select onChange={e => {
+                  const val = e.target.value;
+                  if (val === '__crear_nuevo__') {
+                    setIsCreatingDestino(true);
+                  } else if (val && !selected.includes(val)) {
+                    setFormData({...formData, campoDestino: [...selected, val]});
+                  }
+                  e.target.value = "";
+                }} defaultValue="" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer ${getFieldErrorClass(selected.length === 0) || 'border-slate-300'}`}>
+                  <option value="">Seleccionar del listado (si existe)...</option>
+                  <option value="__crear_nuevo__" className="text-primary font-medium">+ Crear nuevo campo</option>
+                  <option disabled>──────────</option>
+                  {derivedFields.filter(f => !selected.includes(f.id)).map(f => (
+                    <option key={f.id} value={f.id}>{f.id}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <h5 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+            Campos Destino <span className="text-rose-500">*</span>
+          </h5>
+          {!isCreatingDestino && (
+            <button type="button" onClick={() => setIsCreatingDestino(true)} className="text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/5 px-2 py-1 rounded">
+              <Plus size={14} /> Crear campo nuevo
+            </button>
+          )}
+        </div>
+        
+        {isCreatingDestino ? (
+          <div className="bg-white border text-sm border-primary/20 rounded-lg p-4 space-y-3 shadow-sm">
+            <div>
+              <label className="block text-[12px] font-medium text-slate-700 mb-1">Nombre técnico (ID) <span className="text-rose-500">*</span></label>
+              <input type="text" value={formData.campoDestino as string || ""} onChange={e => setFormData({...formData, campoDestino: e.target.value.toLowerCase().replace(/\s+/g, '_')})} placeholder="Ej. orden_extraida" className={`w-full px-2.5 py-1.5 border rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none ${getFieldErrorClass(!formData.campoDestino) || 'border-slate-300'}`} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[12px] font-medium text-slate-700 mb-1">Tipo de dato <span className="text-rose-500">*</span></label>
+                <select value={formData.campoDestinoTipoDato || "Texto"} onChange={e => setFormData({...formData, campoDestinoTipoDato: e.target.value})} className={`w-full px-2.5 py-1.5 border rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none bg-white ${getFieldErrorClass(!formData.campoDestinoTipoDato) || 'border-slate-300'}`}>
+                  <option value="Texto">Texto</option>
+                  <option value="Número">Número</option>
+                  <option value="Entero">Entero</option>
+                  <option value="Decimal">Decimal</option>
+                  <option value="Fecha">Fecha</option>
+                  <option value="Booleano">Booleano</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-slate-700 mb-1">Etiqueta visible</label>
+                <input type="text" value={formData.campoDestinoEtiqueta || ""} onChange={e => setFormData({...formData, campoDestinoEtiqueta: e.target.value})} placeholder="Ej. Orden extraída" className="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-medium text-slate-700 mb-1">Descripción (Opcional)</label>
+              <input type="text" value={formData.campoDestinoDesc || ""} onChange={e => setFormData({...formData, campoDestinoDesc: e.target.value})} placeholder="Breve explicación" className="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none" />
+            </div>
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 mt-2">
+              <button type="button" onClick={() => setIsCreatingDestino(false)} className="px-3 py-1.5 bg-primary text-white text-[12px] font-medium rounded hover:bg-primary/90 transition-colors disabled:opacity-50" disabled={!formData.campoDestino}>
+                Guardar campo
+              </button>
+              <button type="button" onClick={() => {
+                setIsCreatingDestino(false);
+                setFormData({
+                  ...formData, 
+                  campoDestino: '', 
+                  campoDestinoTipoDato: '', 
+                  campoDestinoEtiqueta: '', 
+                  campoDestinoDesc: ''
+                });
+              }} className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[12px] font-medium rounded hover:bg-slate-200 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="relative">
+              <select value={(formData.campoDestino as string) || ""} onChange={e => {
+                const val = e.target.value;
+                if (val === '__crear_nuevo__') {
+                  setIsCreatingDestino(true);
+                  setFormData({...formData, campoDestino: ''});
+                } else {
+                  setFormData({...formData, campoDestino: val});
+                }
+              }} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoDestino || formData.campoDestino.length === 0) || 'border-slate-300'}`}>
+                <option value="">Seleccionar del listado (si existe)...</option>
+                <option value="__crear_nuevo__" className="text-primary font-medium">+ Crear nuevo campo</option>
+                {derivedFields.length > 0 && <option disabled>──────────</option>}
+                {derivedFields.map(f => (
+                  <option key={f.id} value={f.id}>{f.id}</option>
+                ))}
+                {formData.campoDestino && !derivedFields.find(f => f.id === formData.campoDestino) && formData.campoDestino !== '__crear_nuevo__' && (
+                  <option value={formData.campoDestino as string}>{formData.campoDestino as string}</option>
+                )}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const isRuleComplete = (r: Partial<ReglaPreparacion>) => {
     if (!r.nombre) return false;
     
     if (r.tipo === 'Transformación') {
-      if (!r.accion) return false;
+      if (!r.subTipo) return false;
+
+      // Almost all need a source except maybe some generalized ones, but let's assume they all need at least a source configured
+      if (!r.fuente || r.fuente.length === 0) return false;
+
+      switch (r.subTipo as TransformationType) {
+        case "Extraer valor de un campo":
+          if (!r.campo || r.campo.length === 0) return false;
+          if (!r.metodoExtraccion) return false;
+          if (r.metodoExtraccion === 'Por posición fija') {
+            if (!r.posicionInicial || Number(r.posicionInicial) <= 0 || !r.longitud || Number(r.longitud) <= 0) return false;
+          }
+          if (r.metodoExtraccion === 'Por delimitador') {
+            if (!r.delimitador || !r.segmentoAExtraer) return false;
+            if (r.segmentoAExtraer === 'Número de segmento específico' && (!r.numeroSegmento || Number(r.numeroSegmento) <= 0)) return false;
+          }
+          if (r.metodoExtraccion === 'Antes de un texto' || r.metodoExtraccion === 'Después de un texto') {
+             if (!r.textoReferencia) return false;
+          }
+          if (r.metodoExtraccion === 'Por patrón') {
+             if (!r.patronExtraccion) return false;
+          }
+          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+          break;
+    case "Separar campo en varios campos":
+      if (!r.campo || r.campo.length === 0) return false;
+      if (!r.metodoSeparacion) return false;
+      if (r.metodoSeparacion === 'Por delimitador' && !r.delimitador) return false;
+      if (r.metodoSeparacion === 'Por posición fija' && !r.longitudesFragmentos) return false;
+      if (!r.campoDestino || r.campoDestino.length === 0) return false;
+      break;
+        case "Unir campos":
+          if (!r.campo || r.campo.length === 0) return false;
+          if (r.separador === undefined) return false;
+          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+          break;
+        case "Crear campo calculado":
+          if (!r.campo || r.campo.length === 0) return false;
+          if (!r.operadorCalculo) return false;
+          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+          break;
+        case "Ajustar signo o naturaleza del monto":
+          if (!r.campo || r.campo.length === 0) return false;
+          if (!r.criterioAjuste) return false;
+          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+          break;
+        case "Clasificar registros":
+          if (!r.valorAsignado) return false;
+          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+          if (!r.campo || !r.operadorCondicion) return false;
+          if (['Igual a', 'Diferente de', 'Contiene', 'No contiene', 'Mayor que', 'Menor que'].includes(r.operadorCondicion) && !r.valorCondicion) return false;
+          if (r.operadorCondicion === 'Entre rango' && (!r.valorCondicionMin || !r.valorCondicionMax)) return false;
+          break;
+        case "Derivar fecha":
+          if (!r.baseFecha) return false;
+          if (r.baseFecha === 'Campo fecha' && (!r.campo || r.campo.length === 0)) return false;
+          if (!r.reglaDerivacionFecha) return false;
+          if ((r.reglaDerivacionFecha === 'Sumar días' || r.reglaDerivacionFecha === 'Restar días') && !r.cantidadDias) return false;
+          if (!r.campoDestino || r.campoDestino.length === 0) return false;
+          break;
+        case "Excluir registros del cruce":
+          if (!r.motivoExclusion) return false;
+          if (!r.campo || !r.operadorCondicion) return false;
+          if (['Igual a', 'Diferente de', 'Contiene', 'No contiene', 'Mayor que', 'Menor que'].includes(r.operadorCondicion) && !r.valorCondicion) return false;
+          if (r.operadorCondicion === 'Entre rango' && (!r.valorCondicionMin || !r.valorCondicionMax)) return false;
+          break;
+        default:
+          return false;
+      }
     }
 
     if (r.tipo === 'Normalización') {
@@ -325,7 +869,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
     fuente: "",
     campo: "",
     tipo: "Validación",
-    subTipo: "Campo obligatorio",
+    subTipo: "",
     accion: "",
     activa: true,
     nivel: "Fuerte",
@@ -344,6 +888,33 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
     setViewMode("stepper");
   };
 
+  const handleMoveRule = (id: string, direction: 'up' | 'down') => {
+    setReglas(currentRules => {
+      const idx = currentRules.findIndex(r => r.id === id);
+      if (idx === -1) return currentRules;
+      if (direction === 'up' && idx === 0) return currentRules;
+      if (direction === 'down' && idx === currentRules.length - 1) return currentRules;
+      
+      const newIndex = direction === 'up' ? idx - 1 : idx + 1;
+      const newRules = [...currentRules];
+      const temp = newRules[idx];
+      newRules[idx] = newRules[newIndex];
+      newRules[newIndex] = temp;
+      
+      const updatedSet = new Set(unpublishedRuleIds);
+      updatedSet.add(temp.id);
+      updatedSet.add(newRules[idx].id);
+      setUnpublishedRuleIds(updatedSet);
+      
+      const editedSet = new Set(editedBlocks);
+      editedSet.add(temp.tipo);
+      setEditedBlocks(editedSet);
+      onChange();
+      
+      return newRules;
+    });
+  };
+
   const handleCreateRule = (tipo: TipoRegla) => {
     setCurrentRuleType(tipo);
     setEditingRegla(null);
@@ -353,7 +924,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       fuente: "",
       campo: "",
       tipo: tipo,
-      subTipo: tipo === "Validación" ? "Campo obligatorio" : tipo === "Normalización" ? "Limpiar espacios" : undefined,
+      subTipo: "",
       accion: "",
       activa: true,
       nivel: "Fuerte",
@@ -560,10 +1131,23 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
     }
 
     const getCampoAsociado = (regla: ReglaPreparacion) => {
+      if (regla.tipo === 'Transformación') {
+        if (regla.subTipo === 'Excluir registros del cruce' || regla.subTipo === 'Clasificar registros') {
+          return regla.campo ? (Array.isArray(regla.campo) ? regla.campo[0] : regla.campo) : 'Registros específicos';
+        }
+        if (regla.subTipo === 'Derivar fecha') {
+          return regla.baseFecha === 'Campo fecha' && regla.campo ? (Array.isArray(regla.campo) ? regla.campo[0] : regla.campo) : (regla.baseFecha || 'Fecha');
+        }
+      }
       if (regla.subTipo === 'Estructura requerida' || regla.subTipo === 'Cantidad mínima de registros') {
         return 'Fuente completa';
       }
       if (Array.isArray(regla.campo)) {
+        if (regla.tipo === 'Transformación' && regla.subTipo === 'Crear campo calculado' && regla.operadorCalculo) {
+          const ops: Record<string, string> = {"Suma": "+", "Resta": "-", "Multiplicación": "x", "División": "÷", "Diferencia absoluta": "diff"};
+          const op = ops[regla.operadorCalculo] || '+';
+          return regla.campo.join(` ${op} `);
+        }
         return regla.campo.join(' + ');
       }
       return regla.campo || 'Fuente completa';
@@ -571,7 +1155,35 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
 
     const getCondicionResumida = (regla: ReglaPreparacion) => {
       if (regla.tipo === 'Transformación') {
-        return regla.accion;
+        const d = (c: any) => Array.isArray(c) ? c.join(', ') : c;
+        
+        switch (regla.subTipo as TransformationType) {
+          case 'Extraer valor de un campo':
+            return `extraer ${regla.metodoExtraccion} a ${d(regla.campoDestino)}`;
+          case 'Separar campo en varios campos':
+            const dMult = Array.isArray(regla.campoDestino) ? regla.campoDestino.join(' y ') : (regla.campoDestino || '[destino]');
+            if (regla.metodoSeparacion === 'Por delimitador') return `separar por ${regla.delimitador || 'delimitador'} a ${dMult}`;
+            return `separar a ${dMult}`;
+          case 'Unir campos':
+            return `unir a ${d(regla.campoDestino)}`;
+          case 'Crear campo calculado':
+            return `calcular ${d(regla.campoDestino)} (${regla.tipoCalculo})`;
+          case 'Ajustar signo o naturaleza del monto':
+            return `ajustar signo a ${d(regla.campoDestino)}`;
+          case 'Clasificar registros':
+            const eqC = regla.operadorCondicion === 'Entre rango' ? `entre ${regla.valorCondicionMin} y ${regla.valorCondicionMax}` : `${regla.operadorCondicion} ${regla.valorCondicion || ''}`.trim();
+            return `clasificar como ${regla.valorAsignado} a ${d(regla.campoDestino)}`;
+          case 'Derivar fecha':
+            const baseD = regla.baseFecha === 'Campo fecha' ? d(regla.campo) : regla.baseFecha;
+            const resD = regla.reglaDerivacionFecha === 'Sumar días' ? `sumando ${regla.cantidadDias} días a ${baseD}` : 
+                         regla.reglaDerivacionFecha === 'Restar días' ? `restando ${regla.cantidadDias} días a ${baseD}` :
+                         `en base a ${baseD} (${regla.reglaDerivacionFecha})`;
+            return `derivar a ${d(regla.campoDestino)} ${resD}`;
+          case 'Excluir registros del cruce':
+            const eqE = regla.operadorCondicion === 'Entre rango' ? `entre ${regla.valorCondicionMin} y ${regla.valorCondicionMax}` : `${regla.operadorCondicion} ${regla.valorCondicion || ''}`.trim();
+            return `excluir si ${d(regla.campo)} es ${eqE} (Motivo: ${regla.motivoExclusion})`;
+        }
+        return regla.accion || regla.subTipo || 'transformación';
       }
       
       if (regla.tipo === 'Normalización') {
@@ -632,7 +1244,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       }
     };
 
-    const groupedRules = groupBySource 
+    const groupedRules: Record<string, ReglaPreparacion[]> = groupBySource 
       ? rules.reduce((acc, rule) => {
           const source = Array.isArray(rule.fuente) ? rule.fuente.join(", ") : (rule.fuente || 'Sin fuente configurada');
           if (!acc[source]) acc[source] = [];
@@ -661,36 +1273,38 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                     className={`px-5 md:px-6 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all hover:bg-slate-50 cursor-pointer`}
                   >
                     <div className="w-full sm:flex-1 min-w-0">
-                      <div className="flex items-center justify-start gap-3 mb-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-1">
                         <span className={`text-[13.5px] font-semibold truncate flex items-center gap-2 ${regla.activa ? 'text-slate-800' : 'text-slate-400'}`}>
                           {unpublishedRuleIds.has(regla.id) && (
                             <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" title="Cambios sin publicar" />
                           )}
                           {regla.nombre || "Validación sin nombre"}
                         </span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${regla.activa ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                            {regla.activa ? 'Activa' : 'Inactiva'}
-                          </span>
-                          {regla.tipo !== 'Normalización' && (
-                            regla.nivel === 'Fuerte' ? (
-                              <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${regla.activa ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                                Bloqueante
-                              </span>
-                            ) : (
-                              <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${regla.activa ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                                Advertencia
-                              </span>
-                            )
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          {regla.activa ? (
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100">
+                              Activa
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                              Inactiva
+                            </span>
                           )}
-                          {!isRuleComplete(regla) && (
-                            <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-rose-50 text-rose-600 border-rose-100">
+                          {(!isRuleComplete(regla)) && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">
                               Incompleta
                             </span>
                           )}
                           {regla.dependenciaInactiva && (
-                            <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-amber-50 text-amber-600 border-amber-100">
-                              {regla.tipo === 'Normalización' ? 'Error de configuración' : 'Revisión pendiente'}
+                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded border border-rose-100" title="Depende de regla inactiva o incompleta">
+                              <AlertTriangle size={10} />
+                              Error de configuración
+                            </span>
+                          )}
+                          {regla.tipo === 'Validación' && regla.nivel === 'Fuerte' && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">
+                              <ShieldAlert size={10} />
+                              Bloqueante
                             </span>
                           )}
                         </div>
@@ -712,6 +1326,44 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end mt-3 sm:mt-0">
+                      {regla.tipo === 'Transformación' && !groupBySource && !searchQuery && (
+                        <>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleMoveRule(regla.id, 'up'); }}
+                            className="p-1.5 rounded-md transition-colors text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                            title="Mover arriba"
+                          >
+                            <ArrowUp size={16} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleMoveRule(regla.id, 'down'); }}
+                            className="p-1.5 rounded-md transition-colors text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                            title="Mover abajo"
+                          >
+                            <ArrowDown size={16} />
+                          </button>
+                          <div className="w-px h-5 bg-slate-200 mx-1" />
+                        </>
+                      )}
+                      {regla.tipo === 'Normalización' && (
+                        <>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); moveRule(regla.id, 'up'); }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors border border-transparent"
+                            title="Mover arriba"
+                          >
+                            <ChevronUp size={16} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); moveRule(regla.id, 'down'); }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors border border-transparent"
+                            title="Mover abajo"
+                          >
+                            <ChevronDown size={16} />
+                          </button>
+                          <div className="w-px h-5 bg-slate-200 mx-1" />
+                        </>
+                      )}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -736,25 +1388,6 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                       >
                         <Copy size={16} />
                       </button>
-                      {regla.tipo === 'Normalización' && (
-                        <>
-                          <div className="w-px h-5 bg-slate-200 mx-1" />
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); moveRule(regla.id, 'up'); }}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors border border-transparent"
-                            title="Mover arriba"
-                          >
-                            <ChevronUp size={16} />
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); moveRule(regla.id, 'down'); }}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors border border-transparent"
-                            title="Mover abajo"
-                          >
-                            <ChevronDown size={16} />
-                          </button>
-                        </>
-                      )}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -832,26 +1465,35 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                               )}
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5 mt-1.5 mb-2">
-                              {regla.tipo !== 'Normalización' && regla.nivel === "Fuerte" && (
-                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
+                              {(() => {
+                                if (!regla.activa) {
+                                  return (
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                                      Inactiva
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100">
+                                    Activa
+                                  </span>
+                                );
+                              })()}
+                              {(!isRuleComplete(regla)) && (
+                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">
+                                  Incompleta
+                                </span>
+                              )}
+                              {(regla.dependenciaInactiva) && (
+                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded border border-rose-100" title="Depende de regla inactiva o incompleta">
+                                  <AlertTriangle size={10} />
+                                  Error de configuración
+                                </span>
+                              )}
+                              {regla.tipo === 'Validación' && regla.nivel === "Fuerte" && (
+                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">
                                   <ShieldAlert size={10} />
                                   Bloqueante
-                                </span>
-                              )}
-                              {regla.dependenciaInactiva && (
-                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100" title="Depende de regla inactiva o incompleta">
-                                  <AlertTriangle size={10} />
-                                  {regla.tipo === 'Normalización' ? 'Error de config.' : 'Revisión pendiente'}
-                                </span>
-                              )}
-                              {!regla.activa && (
-                                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
-                                  Inactiva
-                                </span>
-                              )}
-                              {!isRuleComplete(regla) && (
-                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded border border-rose-100">
-                                  Incompleta
                                 </span>
                               )}
                             </div>
@@ -888,20 +1530,6 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                           </div>
                           
                           <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleEditRule(regla); }}
-                              className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors" 
-                              title="Configurar"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleDuplicateRule(regla); }}
-                              className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors" 
-                              title="Duplicar"
-                            >
-                              <Copy size={14} />
-                            </button>
                             {regla.tipo === 'Normalización' && (
                               <>
                                 <button 
@@ -920,6 +1548,33 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                 </button>
                               </>
                             )}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newReglas = reglas.map((r) => r.id === regla.id ? { ...r, activa: !r.activa } : r);
+                                setReglas(newReglas);
+                                setEditedBlocks(prev => new Set(prev).add(regla.tipo));
+                                onChange();
+                              }}
+                              className={`p-1.5 rounded-md transition-colors ${regla.activa ? 'text-emerald-500 hover:bg-emerald-50' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'}`}
+                              title={regla.activa ? 'Desactivar regla' : 'Activar regla'}
+                            >
+                              <Power size={14} strokeWidth={regla.activa ? 2.5 : 2} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleEditRule(regla); }}
+                              className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors" 
+                              title="Configurar"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleDuplicateRule(regla); }}
+                              className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors" 
+                              title="Duplicar"
+                            >
+                              <Copy size={14} />
+                            </button>
                             <button 
                               onClick={(e) => { e.stopPropagation(); setRuleToDelete(regla); }}
                               className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors" 
@@ -966,6 +1621,15 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       desc: "Reglas complejas que derivan, extraen o calculan nuevos datos"
     }
   ];
+
+  if (isPreviewModalOpen) {
+    return (
+      <PreviewTestModal
+        onClose={() => setIsPreviewModalOpen(false)}
+        reglas={reglas}
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto pb-12 animate-in fade-in duration-300">
@@ -1215,7 +1879,10 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                       </div>
                       
                       <div className="w-full md:w-auto flex flex-col items-stretch md:items-end gap-2 shrink-0 border-t md:border-t-0 border-white/10 md:pl-5 pt-4 md:pt-0">
-                        <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[13.5px] font-bold rounded-xl shadow-sm transition-colors group">
+                        <button 
+                          onClick={() => setIsPreviewModalOpen(true)}
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[13.5px] font-bold rounded-xl shadow-sm transition-colors group"
+                        >
                           <PlayCircle size={18} className="text-emerald-100 group-hover:text-white transition-colors" />
                           Ejecutar prueba
                         </button>
@@ -1293,16 +1960,16 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             className={`w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${getFieldErrorClass(!formData.nombre)}`}
                           />
                         </div>
-                        <div className="shrink-0 flex flex-col items-start sm:items-end w-full sm:w-auto">
+                        <div className="shrink-0 flex flex-col justify-end w-full sm:w-auto">
                           <button 
                             onClick={() => setFormData({...formData, activa: !formData.activa})}
-                            className={`flex items-center gap-2 py-2 px-4 rounded-lg border text-sm font-medium transition-all w-full sm:w-auto justify-center ${
+                            className={`flex items-center gap-2 py-2 px-4 rounded-lg border text-sm font-medium transition-all w-full sm:w-auto justify-center h-[38px] ${
                               formData.activa 
                               ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' 
-                              : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
+                              : 'bg-stone-50 border-stone-200 text-stone-600'
                             }`}
                           >
-                            <div className={`w-2 h-2 rounded-full ${formData.activa ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                            <div className={`w-2 h-2 rounded-full ${formData.activa ? 'bg-emerald-500' : 'bg-stone-400'}`} />
                             {formData.activa ? 'Activa' : 'Inactiva'}
                           </button>
                         </div>
@@ -1313,7 +1980,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                           rows={2}
                           value={formData.descripcion}
                           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                          placeholder="Explica brevemente qué hace esta regla..."
+                          placeholder={currentRuleType === 'Transformación' ? "Define cómo se generará o preparará un dato para la conciliación." : "Explica brevemente qué hace esta regla..."}
                           className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
                         />
                       </div>
@@ -1338,14 +2005,62 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                   {expandedSections.aplicacion && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in slide-in-from-top-2 fade-in duration-200">
                       <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Fuente de aplicación <span className="text-rose-500">*</span></label>
+                        <select 
+                          value={Array.isArray(formData.fuente) ? 'Multi' : formData.fuente}
+                          onChange={(e) => setFormData({...formData, fuente: e.target.value})}
+                          className={`w-full px-3 py-2 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.fuente)}`}
+                        >
+                          <option value="">Selecciona una fuente</option>
+                          <option value="Extracto Bancario">Extracto Bancario</option>
+                          <option value="Cobros ERP">Cobros ERP</option>
+                          <option value="Municipio">Municipio</option>
+                          <option value="Banred">Banred</option>
+                          <option value="Banco">Banco</option>
+                        </select>
+                      </div>
+
+                      <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          {currentRuleType === 'Validación' ? 'Tipo de Validación' : 'Operación'} <span className="text-rose-500">*</span>
+                          {currentRuleType === 'Validación' ? 'Tipo de validación' : currentRuleType === 'Transformación' ? 'Operación de transformación' : 'Operación de normalización'} <span className="text-rose-500">*</span>
                         </label>
                         <select 
                           value={formData.subTipo || ""}
-                          onChange={(e) => setFormData({...formData, subTipo: e.target.value as ValidationType})}
+                          onChange={(e) => {
+                            const newSubTipo = e.target.value as any;
+                            // Limpiar dependencias
+                            setFormData({
+                              ...formData,
+                              subTipo: newSubTipo,
+                              campo: newSubTipo === 'Unir campos' ? [] : "", 
+                              campoDestino: newSubTipo === 'Separar campo en varios campos' ? [] : "",
+                              patronExtraccion: "",
+                              metodoExtraccion: "",
+                              metodoSeparacion: "",
+                              delimitador: "",
+                              separador: "",
+                              textoReferencia: "",
+                              criterioAjusteSigno: "",
+                              campoIndicador: "",
+                              equivalenciasSigno: [],
+                              campoARestar: "",
+                              campoOperador: "",
+                              primerCampo: "",
+                              segundoCampo: "",
+                              operacionConstante: "Sumar",
+                              valorConstanteCalculo: "",
+                              tipoCalculo: "",
+                              valorAsignado: "",
+                              condicionClasificacion: "",
+                              motivoExclusion: "",
+                              condicionExclusion: "",
+                              reglaDerivacionFecha: "",
+                            });
+                            setIsCreatingDestino(false);
+                          }}
                           className={`w-full px-3 py-2 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.subTipo)}`}
                         >
+                          <option value="">Seleccione una operación</option>
                           {currentRuleType === 'Validación' ? (
                             <>
                               <option value="Campo obligatorio">Campo obligatorio</option>
@@ -1370,32 +2085,20 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             </>
                           ) : (
                             <>
-                              <option value="Extraer subcadena">Extraer subcadena</option>
-                              <option value="Concatenar">Concatenar</option>
-                              <option value="Derivación condicional">Derivación condicional</option>
-                              <option value="Valor fijo">Valor fijo</option>
+                              <option value="Extraer valor de un campo">Extraer valor de un campo</option>
+                              <option value="Separar campo en varios campos">Separar campo en varios campos</option>
+                              <option value="Unir campos">Unir campos</option>
+                              <option value="Crear campo calculado">Crear campo calculado</option>
+                              <option value="Ajustar signo o naturaleza del monto">Ajustar signo o naturaleza del monto</option>
+                              <option value="Clasificar registros">Clasificar registros</option>
+                              <option value="Derivar fecha">Derivar fecha</option>
+                              <option value="Excluir registros del cruce">Excluir registros del cruce</option>
                             </>
                           )}
                         </select>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Fuente de aplicación <span className="text-rose-500">*</span></label>
-                        <select 
-                          value={Array.isArray(formData.fuente) ? 'Multi' : formData.fuente}
-                          onChange={(e) => setFormData({...formData, fuente: e.target.value})}
-                          className={`w-full px-3 py-2 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.fuente)}`}
-                        >
-                          <option value="">Selecciona una fuente</option>
-                          <option value="Extracto Bancario">Extracto Bancario</option>
-                          <option value="Cobros ERP">Cobros ERP</option>
-                          <option value="Municipio">Municipio</option>
-                          <option value="Banred">Banred</option>
-                          <option value="Banco">Banco</option>
-                        </select>
-                      </div>
-
-                      {!(currentRuleType === 'Validación' && (formData.subTipo === "Estructura requerida" || formData.subTipo === "Cantidad mínima de registros")) && (
+                      {!(currentRuleType === 'Transformación' || (currentRuleType === 'Validación' && (formData.subTipo === "Estructura requerida" || formData.subTipo === "Cantidad mínima de registros"))) && (
                         <div className="sm:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
                           <label className="block text-sm font-medium text-slate-700 mb-1.5">
                             {currentRuleType === 'Validación' && formData.subTipo === 'Duplicidad' ? 'Campos asociados' : 'Campo asociado'} <span className="text-rose-500">*</span>
@@ -1403,7 +2106,8 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                           <div className="mt-2">
                             {currentRuleType === 'Validación' && formData.subTipo === 'Duplicidad' ? (
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {["monto", "fecha_transaccion", "referencia", "id_cliente", "estado", "fecha_valor"].map(c => {
+                                {getAvailableFieldsList().map(field => {
+                                  let c = field.id;
                                   const isSelected = Array.isArray(formData.campo) 
                                       ? formData.campo.includes(c) 
                                       : (typeof formData.campo === 'string' && formData.campo.split(',').map(s=>s.trim()).includes(c));
@@ -1426,6 +2130,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                         className="rounded text-primary focus:ring-primary accent-primary w-4 h-4 cursor-pointer"
                                       />
                                       <span className="text-sm font-medium text-slate-700">{c}</span>
+                                      {field.type === 'derivado' && <span className="ml-auto text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Derivado</span>}
                                     </label>
                                   );
                                 })}
@@ -1438,12 +2143,9 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                   className={`w-full px-3 py-2 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campo || formData.campo.length === 0)}`}
                                 >
                                   <option value="">Seleccione un campo...</option>
-                                  <option value="monto">monto</option>
-                                  <option value="fecha_transaccion">fecha_transaccion</option>
-                                  <option value="referencia">referencia</option>
-                                  <option value="id_cliente">id_cliente</option>
-                                  <option value="estado">estado</option>
-                                  <option value="fecha_valor">fecha_valor</option>
+                                  {getAvailableFieldsList().map(f => (
+                                    <option key={f.id} value={f.id}>{f.id} {f.type === 'derivado' ? `(Derivado de ${f.source})` : ''}</option>
+                                  ))}
                                 </select>
                                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                               </div>
@@ -1636,32 +2338,559 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
 
                 {currentRuleType === 'Transformación' && (
                   <>
-                    <div className="w-full h-px bg-slate-100" />
+                    <div className="w-full h-px bg-slate-100 mt-6 mb-6" />
                     <section>
-                      <button 
-                        onClick={() => toggleSection('condicion')}
-                        className="w-full flex items-center justify-between gap-2 mb-4 text-slate-800 hover:text-primary transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Settings2 size={16} className="text-primary" />
-                          <h4 className="text-[14px] font-bold uppercase tracking-wider">Configuración de Operación</h4>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Settings2 size={16} className="text-primary" />
+                        <h4 className="text-[14px] font-bold uppercase tracking-wider">Parámetros de la Operación</h4>
+                      </div>
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        {formData.subTipo === 'Extraer valor de un campo' && (
+                          <div className="space-y-4">
+                            {renderCampoOrigen(false)}
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Método de extracción <span className="text-rose-500">*</span></label>
+                              <div className="relative">
+                                <select value={formData.metodoExtraccion || ""} onChange={e => setFormData({...formData, metodoExtraccion: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.metodoExtraccion) || 'border-slate-300'}`}>
+                                  <option value="">Selecciona método</option>
+                                  <option value="Por posición fija">Por posición fija</option>
+                                  <option value="Por delimitador">Por delimitador</option>
+                                  <option value="Antes de un texto">Antes de un texto</option>
+                                  <option value="Después de un texto">Después de un texto</option>
+                                  <option value="Por patrón">Por patrón (Regex)</option>
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                              </div>
+                            </div>
+                            {formData.metodoExtraccion === 'Por posición fija' && (
+                              <div className="flex flex-wrap gap-4">
+                                <div className="flex-1">
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Posición inicial <span className="text-rose-500">*</span></label>
+                                  <input type="number" min="1" value={formData.posicionInicial || ""} onChange={e => setFormData({...formData, posicionInicial: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.posicionInicial || Number(formData.posicionInicial) <= 0) || 'border-slate-300'}`} placeholder="Ej. 1" />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Cantidad de caracteres <span className="text-rose-500">*</span></label>
+                                  <input type="number" min="1" value={formData.longitud || ""} onChange={e => setFormData({...formData, longitud: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.longitud || Number(formData.longitud) <= 0) || 'border-slate-300'}`} placeholder="Ej. 10" />
+                                </div>
+                              </div>
+                            )}
+                            {formData.metodoExtraccion === 'Por delimitador' && (
+                              <div className="flex flex-wrap items-end gap-4">
+                                <div className="flex-1">
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Delimitador <span className="text-rose-500">*</span></label>
+                                  <input type="text" value={formData.delimitador || ""} onChange={e => setFormData({...formData, delimitador: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.delimitador) || 'border-slate-300'}`} placeholder="Ej. -" />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Segmento a extraer <span className="text-rose-500">*</span></label>
+                                  <div className="relative">
+                                    <select value={formData.segmentoAExtraer || ""} onChange={e => setFormData({...formData, segmentoAExtraer: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.segmentoAExtraer) || 'border-slate-300'}`}>
+                                      <option value="">Selecciona segmento</option>
+                                      <option value="Primer segmento">Primer segmento</option>
+                                      <option value="Segundo segmento">Segundo segmento</option>
+                                      <option value="Último segmento">Último segmento</option>
+                                      <option value="Número de segmento específico">Número de segmento específico</option>
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                  </div>
+                                </div>
+                                {formData.segmentoAExtraer === 'Número de segmento específico' && (
+                                  <div className="flex-1">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Número de segmento <span className="text-rose-500">*</span></label>
+                                    <input type="number" min="1" value={formData.numeroSegmento || ""} onChange={e => setFormData({...formData, numeroSegmento: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.numeroSegmento) || 'border-slate-300'}`} placeholder="Ej. 3" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {(formData.metodoExtraccion === 'Antes de un texto' || formData.metodoExtraccion === 'Después de un texto') && (
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Texto de referencia <span className="text-rose-500">*</span></label>
+                                <input type="text" value={formData.textoReferencia || ""} onChange={e => setFormData({...formData, textoReferencia: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.textoReferencia) || 'border-slate-300'}`} placeholder="Ej. Orden Nro: " />
+                              </div>
+                            )}
+                            {formData.metodoExtraccion === 'Por patrón' && (
+                              <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Patrón de extracción (Regex) <span className="text-rose-500">*</span></label>
+                                  <input type="text" value={formData.patronExtraccion || ""} onChange={e => setFormData({...formData, patronExtraccion: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm font-mono ${getFieldErrorClass(!formData.patronExtraccion) || 'border-slate-300'}`} placeholder="Ej. \d{4}-\d{2}" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Descripción del patrón (Opcional)</label>
+                                  <input type="text" value={formData.descripcionPatron || ""} onChange={e => setFormData({...formData, descripcionPatron: e.target.value})} className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg text-sm" placeholder="Ej. Extrae el formato 0000-00" />
+                                </div>
+                              </div>
+                            )}
+                            {renderCampoDestino(false)}
+                          </div>
+                        )}
+
+                        {formData.subTipo === 'Separar campo en varios campos' && (
+                          <div className="space-y-4">
+                            {renderCampoOrigen(false)}
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Método de separación <span className="text-rose-500">*</span></label>
+                              <div className="relative">
+                                <select value={formData.metodoSeparacion || ""} onChange={e => setFormData({...formData, metodoSeparacion: e.target.value, campoDestino: []})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.metodoSeparacion) || 'border-slate-300'}`}>
+                                  <option value="">Selecciona método</option>
+                                  <option value="Por delimitador">Por delimitador</option>
+                                  <option value="Por posición fija">Por posición fija</option>
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                              </div>
+                            </div>
+                            
+                            {formData.metodoSeparacion === 'Por delimitador' && (
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Delimitador <span className="text-rose-500">*</span></label>
+                                <input type="text" value={formData.delimitador || ""} onChange={e => setFormData({...formData, delimitador: e.target.value})} placeholder="Ej. -" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.delimitador) || 'border-slate-300'}`} />
+                              </div>
+                            )}
+
+                            {formData.metodoSeparacion === 'Por posición fija' && (
+                              <div className="mt-4">
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Longitudes de segmentos (separadas por coma) <span className="text-rose-500">*</span></label>
+                                <input type="text" value={formData.longitudesFragmentos || ""} onChange={e => setFormData({...formData, longitudesFragmentos: e.target.value})} placeholder="Ej. 4, 2, 8" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.longitudesFragmentos) || 'border-slate-300'}`} />
+                              </div>
+                            )}
+
+                            {formData.metodoSeparacion && (
+                              <div className="mt-6">
+                                {renderCampoDestino(true)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {formData.subTipo === 'Unir campos' && (
+                          <div className="space-y-4">
+                            {renderCampoOrigen(true)}
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Separador <span className="text-rose-500">*</span></label>
+                              <input type="text" value={formData.separador || ""} onChange={e => setFormData({...formData, separador: e.target.value})} placeholder="Ej. - (Deja en blanco para no usar separador)" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm border-slate-300`} />
+                            </div>
+                            {renderCampoDestino(false)}
+                          </div>
+                        )}
+
+                        {formData.subTipo === 'Crear campo calculado' && (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de cálculo <span className="text-rose-500">*</span></label>
+                              <div className="relative">
+                                <select value={formData.tipoCalculo || ""} onChange={e => setFormData({...formData, tipoCalculo: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.tipoCalculo) || 'border-slate-300'}`}>
+                                  <option value="">Selecciona cálculo</option>
+                                  <option value="Suma">Suma</option>
+                                  <option value="Resta">Resta</option>
+                                  <option value="Multiplicación">Multiplicación</option>
+                                  <option value="División">División</option>
+                                  <option value="Diferencia absoluta">Diferencia absoluta</option>
+                                  <option value="Campo más/menos valor constante">Campo más/menos valor constante</option>
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                              </div>
+                            </div>
+
+                            {formData.tipoCalculo === 'Suma' && (
+                              <>
+                                {renderCampoOrigen(true)}
+                              </>
+                            )}
+
+                            {formData.tipoCalculo === 'Resta' && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {renderCampoOrigen(false)}
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo a restar <span className="text-rose-500">*</span></label>
+                                  <select value={formData.campoARestar || ""} onChange={e => setFormData({...formData, campoARestar: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.campoARestar) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona campo...</option>
+                                    {getAvailableFieldsList(formData.fuente).map(f => (
+                                      <option key={f.id} value={f.id}>{f.id}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {(formData.tipoCalculo === 'Multiplicación' || formData.tipoCalculo === 'División') && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {renderCampoOrigen(false)}
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo operador <span className="text-rose-500">*</span></label>
+                                  <select value={formData.campoOperador || ""} onChange={e => setFormData({...formData, campoOperador: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.campoOperador) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona campo...</option>
+                                    {getAvailableFieldsList(formData.fuente).map(f => (
+                                      <option key={f.id} value={f.id}>{f.id}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {formData.tipoCalculo === 'Diferencia absoluta' && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Primer campo <span className="text-rose-500">*</span></label>
+                                  <select value={formData.primerCampo || ""} onChange={e => setFormData({...formData, primerCampo: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.primerCampo) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona campo...</option>
+                                    {getAvailableFieldsList(formData.fuente).map(f => (
+                                      <option key={f.id} value={f.id}>{f.id}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Segundo campo <span className="text-rose-500">*</span></label>
+                                  <select value={formData.segundoCampo || ""} onChange={e => setFormData({...formData, segundoCampo: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.segundoCampo) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona campo...</option>
+                                    {getAvailableFieldsList(formData.fuente).map(f => (
+                                      <option key={f.id} value={f.id}>{f.id}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {formData.tipoCalculo === 'Campo más/menos valor constante' && (
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {renderCampoOrigen(false)}
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Operación <span className="text-rose-500">*</span></label>
+                                  <select value={formData.operacionConstante || ""} onChange={e => setFormData({...formData, operacionConstante: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.operacionConstante) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona...</option>
+                                    <option value="Sumar">Sumar</option>
+                                    <option value="Restar">Restar</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor constante <span className="text-rose-500">*</span></label>
+                                  <input type="number" value={formData.valorConstanteCalculo || ""} onChange={e => setFormData({...formData, valorConstanteCalculo: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorConstanteCalculo) || 'border-slate-300'}`} placeholder="Ej. 100" />
+                                </div>
+                              </div>
+                            )}
+
+                            {formData.tipoCalculo === 'División' && (
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[13px] flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <p>Durante la ejecución, el sistema omitirá o informará con error las divisiones donde el campo operador sea igual a cero.</p>
+                              </div>
+                            )}
+                            
+                            {formData.tipoCalculo && renderCampoDestino(false)}
+                          </div>
+                        )}
+
+                        {formData.subTipo === 'Ajustar signo o naturaleza del monto' && (
+                          <div className="space-y-4">
+                            {/* Campo monto is represented by campoOrigen(false) */}
+                            {renderCampoOrigen(false)}
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Criterio de ajuste <span className="text-rose-500">*</span></label>
+                              <div className="relative">
+                                <select value={formData.criterioAjusteSigno || ""} onChange={e => setFormData({...formData, criterioAjusteSigno: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.criterioAjusteSigno) || 'border-slate-300'}`}>
+                                  <option value="">Selecciona criterio</option>
+                                  <option value="Invertir signo siempre">Invertir signo siempre</option>
+                                  <option value="Convertir a positivo">Convertir a positivo</option>
+                                  <option value="Convertir a negativo">Convertir a negativo</option>
+                                  <option value="Según campo indicador">Según campo indicador</option>
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                              </div>
+                            </div>
+                            
+                            {formData.criterioAjusteSigno === 'Según campo indicador' && (
+                              <div className="space-y-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo indicador <span className="text-rose-500">*</span></label>
+                                  <select value={formData.campoIndicador || ""} onChange={e => setFormData({...formData, campoIndicador: e.target.value, equivalenciasSigno: formData.equivalenciasSigno?.length ? formData.equivalenciasSigno : [{valor: '', accion: 'Dejar positivo'}]})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.campoIndicador) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona campo indicador...</option>
+                                    {getAvailableFieldsList(formData.fuente).map(f => (
+                                      <option key={f.id} value={f.id}>{f.id}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                
+                                {formData.campoIndicador && (
+                                  <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                      <label className="block text-sm font-medium text-slate-700">Equivalencias</label>
+                                      <button onClick={() => setFormData({...formData, equivalenciasSigno: [...(formData.equivalenciasSigno || []), {valor: '', accion: 'Dejar positivo'}]})} className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline">
+                                        <Plus className="w-3 h-3" /> Agregar
+                                      </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {(formData.equivalenciasSigno || []).map((eq, index) => (
+                                        <div key={index} className="flex gap-2 items-center">
+                                          <div className="flex-1">
+                                            <input type="text" value={eq.valor} onChange={(e) => {
+                                              const updated = [...(formData.equivalenciasSigno || [])];
+                                              updated[index].valor = e.target.value;
+                                              setFormData({...formData, equivalenciasSigno: updated});
+                                            }} className="w-full px-2 py-1.5 border border-slate-300 bg-white rounded text-sm outline-none focus:border-primary" placeholder="Valor (ej. D)" />
+                                          </div>
+                                          <ArrowRight className="w-4 h-4 text-slate-400" />
+                                          <div className="flex-1">
+                                            <select value={eq.accion} onChange={(e) => {
+                                              const updated = [...(formData.equivalenciasSigno || [])];
+                                              updated[index].accion = e.target.value;
+                                              setFormData({...formData, equivalenciasSigno: updated});
+                                            }} className="w-full px-2 py-1.5 border border-slate-300 bg-white rounded text-sm outline-none focus:border-primary">
+                                              <option value="Dejar positivo">Dejar positivo</option>
+                                              <option value="Convertir a negativo">Convertir a negativo</option>
+                                              <option value="Invertir signo">Invertir signo</option>
+                                            </select>
+                                          </div>
+                                          {(formData.equivalenciasSigno || []).length > 1 && (
+                                            <button onClick={() => setFormData({...formData, equivalenciasSigno: (formData.equivalenciasSigno || []).filter((_, i) => i !== index)})} className="text-slate-400 hover:text-rose-500 p-1">
+                                              <X className="w-4 h-4" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {renderCampoDestino(false)}
+                          </div>
+                        )}
+
+                          {formData.subTipo === 'Clasificar registros' && (
+                            <div className="space-y-4">
+                              {renderCampoOrigen(false)}
+                              <div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Operador <span className="text-rose-500">*</span></label>
+                                    <div className="relative">
+                                      <select value={formData.operadorCondicion || ""} onChange={e => setFormData({...formData, operadorCondicion: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.operadorCondicion) || 'border-slate-300'}`}>
+                                        <option value="">Selecciona operador</option>
+                                        <option value="Igual a">Igual a</option>
+                                        <option value="Diferente de">Diferente de</option>
+                                        <option value="Contiene">Contiene</option>
+                                        <option value="No contiene">No contiene</option>
+                                        <option value="Mayor que">Mayor que</option>
+                                        <option value="Menor que">Menor que</option>
+                                        <option value="Entre rango">Entre rango</option>
+                                        <option value="Está vacío">Está vacío</option>
+                                        <option value="No está vacío">No está vacío</option>
+                                      </select>
+                                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    </div>
+                                  </div>
+                                  {!['Está vacío', 'No está vacío', 'Entre rango'].includes(formData.operadorCondicion || '') && (
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Valor de comparación <span className="text-rose-500">*</span></label>
+                                      <input type="text" value={formData.valorCondicion || ""} onChange={e => setFormData({...formData, valorCondicion: e.target.value})} placeholder="Valor..." className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorCondicion && ['Igual a', 'Diferente de', 'Contiene', 'No contiene', 'Mayor que', 'Menor que'].includes(formData.operadorCondicion || '')) || 'border-slate-300'}`} />
+                                    </div>
+                                  )}
+                                  {formData.operadorCondicion === 'Entre rango' && (
+                                    <div className="flex gap-2">
+                                      <div className="flex-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Mínimo <span className="text-rose-500">*</span></label>
+                                        <input type="text" value={formData.valorCondicionMin || ""} onChange={e => setFormData({...formData, valorCondicionMin: e.target.value})} placeholder="Min..." className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorCondicionMin) || 'border-slate-300'}`} />
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Máximo <span className="text-rose-500">*</span></label>
+                                        <input type="text" value={formData.valorCondicionMax || ""} onChange={e => setFormData({...formData, valorCondicionMax: e.target.value})} placeholder="Max..." className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorCondicionMax) || 'border-slate-300'}`} />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor asignado <span className="text-rose-500">*</span></label>
+                                <input type="text" value={formData.valorAsignado || ""} onChange={e => setFormData({...formData, valorAsignado: e.target.value})} placeholder="Ej. Sobrante" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorAsignado) || 'border-slate-300'}`} />
+                              </div>
+                              {renderCampoDestino(false)}
+                            </div>
+                          )}
+
+                          {formData.subTipo === 'Derivar fecha' && (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Base de fecha <span className="text-rose-500">*</span></label>
+                                  <div className="relative">
+                                    <select value={formData.baseFecha || ""} onChange={e => setFormData({...formData, baseFecha: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.baseFecha) || 'border-slate-300'}`}>
+                                      <option value="">Selecciona base</option>
+                                      <option value="Campo fecha">Campo fecha</option>
+                                      <option value="Día operativo del proceso">Día operativo del proceso</option>
+                                      <option value="Fecha de ejecución">Fecha de ejecución</option>
+                                    </select>
+                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                  </div>
+                                </div>
+                                {formData.baseFecha === 'Campo fecha' && (
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Campo fecha origen <span className="text-rose-500">*</span></label>
+                                    <div className="relative">
+                                      <select value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""} onChange={e => setFormData({...formData, campo: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.campo || formData.campo.length === 0) || 'border-slate-300'}`}>
+                                        <option value="">Selecciona campo origen</option>
+                                        {/* Ideally filter to only dates, but for MVP show available fields */
+                                          getAvailableFieldsList(formData.fuente).map(f => (
+                                          <option key={f.id} value={f.id}>{f.id}</option>
+                                        ))}
+                                      </select>
+                                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-4">
+                                <div className="flex-1">
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Regla de derivación <span className="text-rose-500">*</span></label>
+                                  <div className="relative">
+                                    <select value={formData.reglaDerivacionFecha || ""} onChange={e => setFormData({...formData, reglaDerivacionFecha: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.reglaDerivacionFecha) || 'border-slate-300'}`}>
+                                      <option value="">Selecciona regla</option>
+                                      <option value="Tomar mismo día">Tomar mismo día</option>
+                                      <option value="Sumar días">Sumar días</option>
+                                      <option value="Restar días">Restar días</option>
+                                      <option value="Tomar día anterior">Tomar día anterior</option>
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                  </div>
+                                </div>
+                                {["Sumar días", "Restar días"].includes(formData.reglaDerivacionFecha || "") && (
+                                  <div className="flex-1">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Cantidad de días <span className="text-rose-500">*</span></label>
+                                    <input type="number" min="1" value={formData.cantidadDias || ""} onChange={e => setFormData({...formData, cantidadDias: e.target.value})} placeholder="Ej. 1" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.cantidadDias) || 'border-slate-300'}`} />
+                                  </div>
+                                )}
+                              </div>
+                              {renderCampoDestino(false)}
+                            </div>
+                          )}
+
+                          {formData.subTipo === 'Excluir registros del cruce' && (
+                            <div className="space-y-4">
+                              {renderCampoOrigen(false)}
+                              <div>
+                                <h4 className="text-sm font-medium text-slate-700 mb-3">Condición de exclusión</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Operador <span className="text-rose-500">*</span></label>
+                                    <div className="relative">
+                                      <select value={formData.operadorCondicion || ""} onChange={e => setFormData({...formData, operadorCondicion: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.operadorCondicion) || 'border-slate-300'}`}>
+                                        <option value="">Selecciona operador</option>
+                                        <option value="Igual a">Igual a</option>
+                                        <option value="Diferente de">Diferente de</option>
+                                        <option value="Contiene">Contiene</option>
+                                        <option value="No contiene">No contiene</option>
+                                        <option value="Mayor que">Mayor que</option>
+                                        <option value="Menor que">Menor que</option>
+                                        <option value="Entre rango">Entre rango</option>
+                                        <option value="Está vacío">Está vacío</option>
+                                        <option value="No está vacío">No está vacío</option>
+                                      </select>
+                                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    </div>
+                                  </div>
+                                  {!['Está vacío', 'No está vacío', 'Entre rango'].includes(formData.operadorCondicion || '') && (
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Valor de comparación <span className="text-rose-500">*</span></label>
+                                      <input type="text" value={formData.valorCondicion || ""} onChange={e => setFormData({...formData, valorCondicion: e.target.value})} placeholder="Valor..." className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorCondicion && ['Igual a', 'Diferente de', 'Contiene', 'No contiene', 'Mayor que', 'Menor que'].includes(formData.operadorCondicion || '')) || 'border-slate-300'}`} />
+                                    </div>
+                                  )}
+                                  {formData.operadorCondicion === 'Entre rango' && (
+                                    <div className="flex gap-2">
+                                      <div className="flex-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Mínimo <span className="text-rose-500">*</span></label>
+                                        <input type="text" value={formData.valorCondicionMin || ""} onChange={e => setFormData({...formData, valorCondicionMin: e.target.value})} placeholder="Min..." className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorCondicionMin) || 'border-slate-300'}`} />
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Máximo <span className="text-rose-500">*</span></label>
+                                        <input type="text" value={formData.valorCondicionMax || ""} onChange={e => setFormData({...formData, valorCondicionMax: e.target.value})} placeholder="Max..." className={`w-full px-3 py-2 border bg-white rounded-lg text-sm ${getFieldErrorClass(!formData.valorCondicionMax) || 'border-slate-300'}`} />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Motivo de exclusión <span className="text-rose-500">*</span></label>
+                                <div className="relative">
+                                  <select value={formData.motivoExclusion || ""} onChange={e => setFormData({...formData, motivoExclusion: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.motivoExclusion) || 'border-slate-300'}`}>
+                                    <option value="">Selecciona motivo</option>
+                                    <option value="Consulta sin costo">Consulta sin costo</option>
+                                    <option value="Registro informativo">Registro informativo</option>
+                                    <option value="Movimiento no conciliable">Movimiento no conciliable</option>
+                                    <option value="Otro">Otro</option>
+                                  </select>
+                                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="bg-white p-4 border border-slate-200 rounded-lg mt-6">
+                            <p className="text-sm text-slate-600">
+                              <span className="font-semibold text-slate-800">Resultado esperado: </span>
+                              {formData.subTipo 
+                                ? (() => {
+                                    const d = (c: any) => Array.isArray(c) && c.length > 0 ? c.join(', ') : (c || "[destino]");
+                                    const orig = Array.isArray(formData.campo) && formData.campo.length > 0 ? formData.campo.join(', ') : (formData.campo || "[origen]");
+                                    switch(formData.subTipo) {
+                                      case 'Extraer valor de un campo': 
+                                        if (!formData.campoDestino) return `Completa el campo destino para generar el resultado esperado.`;
+                                        if (formData.metodoExtraccion === 'Por posición fija') {
+                                          if (!formData.posicionInicial || !formData.longitud) return `Completa los parámetros de extracción para generar el resultado.`;
+                                          return `Desde el campo ${orig} se extraerán ${formData.longitud} caracteres desde la posición ${formData.posicionInicial} y se guardarán en ${d(formData.campoDestino)}.`;
+                                        } else if (formData.metodoExtraccion === 'Por delimitador') {
+                                          if (!formData.delimitador || !formData.segmentoAExtraer) return `Completa los parámetros de extracción para generar el resultado.`;
+                                          let segmentoStr = formData.segmentoAExtraer.toLowerCase();
+                                          if (formData.segmentoAExtraer === 'Número de segmento específico') {
+                                             if (!formData.numeroSegmento) return `Completa el número de segmento para generar el resultado.`;
+                                             segmentoStr = `segmento ${formData.numeroSegmento}`;
+                                          }
+                                          return `Desde el campo ${orig} se extraerá el ${segmentoStr} separado por '${formData.delimitador}' y se guardará en ${d(formData.campoDestino)}.`;
+                                        } else if (formData.metodoExtraccion === 'Antes de un texto') {
+                                          if (!formData.textoReferencia) return `Completa el texto de referencia para generar el resultado.`;
+                                          return `Desde el campo ${orig} se extraerá el texto ubicado antes de '${formData.textoReferencia}' y se guardará en ${d(formData.campoDestino)}.`;
+                                        } else if (formData.metodoExtraccion === 'Después de un texto') {
+                                          if (!formData.textoReferencia) return `Completa el texto de referencia para generar el resultado.`;
+                                          return `Desde el campo ${orig} se extraerá el texto ubicado después de '${formData.textoReferencia}' y se guardará en ${d(formData.campoDestino)}.`;
+                                        } else if (formData.metodoExtraccion === 'Por patrón') {
+                                          if (!formData.patronExtraccion) return `Completa el patrón de extracción para generar el resultado.`;
+                                          return `Desde el campo ${orig} se extraerá el valor que cumpla el patrón definido y se guardará en ${d(formData.campoDestino)}.`;
+                                        }
+                                        return `Desde el campo ${orig} se extraerá un valor y se guardará en ${d(formData.campoDestino)}.`;
+                                      case 'Separar campo en varios campos': 
+                                        const destinosMultiples = Array.isArray(formData.campoDestino) ? formData.campoDestino.join(' y ') : (formData.campoDestino || '[destinos]');
+                                        return `El campo ${orig} se separará en ${destinosMultiples}.`;
+                                      case 'Unir campos': 
+                                        return `Los campos ${orig} se unirán en ${d(formData.campoDestino)}.`;
+                                      case 'Crear campo calculado': 
+                                        if (formData.tipoCalculo === 'Suma') return `Se calculará ${d(formData.campoDestino)} sumando los campos ${orig}.`;
+                                        if (formData.tipoCalculo === 'Resta') return `Se calculará ${d(formData.campoDestino)} restando ${formData.campoARestar || '[campo]'} a ${orig}.`;
+                                        if (formData.tipoCalculo === 'Multiplicación') return `Se calculará ${d(formData.campoDestino)} multiplicando ${orig} por ${formData.campoOperador || '[campo]'}.`;
+                                        if (formData.tipoCalculo === 'División') return `Se calculará ${d(formData.campoDestino)} dividiendo ${orig} entre ${formData.campoOperador || '[campo]'}.`;
+                                        if (formData.tipoCalculo === 'Diferencia absoluta') return `Se calculará la diferencia absoluta entre ${formData.primerCampo || '[campo]'} y ${formData.segundoCampo || '[campo]'} guardándola en ${d(formData.campoDestino)}.`;
+                                        if (formData.tipoCalculo === 'Campo más/menos valor constante') return `Se calculará ${d(formData.campoDestino)} al ${formData.operacionConstante === 'Restar' ? 'restar' : 'sumar'} ${formData.valorConstanteCalculo || '[valor]'} a ${orig}.`;
+                                        return `Se calculará ${d(formData.campoDestino)} usando ${orig}.`;
+                                      case 'Ajustar signo o naturaleza del monto': 
+                                        if (formData.criterioAjusteSigno === 'Invertir signo siempre') return `Se generará ${d(formData.campoDestino)} invirtiendo el signo del campo ${orig}.`;
+                                        if (formData.criterioAjusteSigno === 'Convertir a positivo') return `Se generará ${d(formData.campoDestino)} convirtiendo a positivo el campo ${orig}.`;
+                                        if (formData.criterioAjusteSigno === 'Convertir a negativo') return `Se generará ${d(formData.campoDestino)} convirtiendo a negativo el campo ${orig}.`;
+                                        if (formData.criterioAjusteSigno === 'Según campo indicador') return `Se generará ${d(formData.campoDestino)} aplicando el signo según ${formData.campoIndicador || '[indicador]'}.`;
+                                        return `Se generará ${d(formData.campoDestino)} aplicando signo según criterio.`;
+                                      case 'Clasificar registros': 
+                                        const eqC = formData.operadorCondicion === 'Entre rango' ? `entre ${formData.valorCondicionMin || '[mín]'} y ${formData.valorCondicionMax || '[máx]'}` : `${formData.operadorCondicion || '[operador]'} ${!['Está vacío', 'No está vacío', 'Entre rango'].includes(formData.operadorCondicion || '') ? (formData.valorCondicion || '[valor]') : ''}`.trim();
+                                        return `Los registros donde ${orig} sea ${eqC} se clasificarán como ${formData.valorAsignado || "[valor]"} en ${d(formData.campoDestino)}.`;
+                                      case 'Derivar fecha': 
+                                        const baseD = formData.baseFecha === 'Campo fecha' ? orig : formData.baseFecha || '[base]';
+                                        const resD = formData.reglaDerivacionFecha === 'Sumar días' ? `sumando ${formData.cantidadDias || '[N]'} días a ${baseD}` : 
+                                                     formData.reglaDerivacionFecha === 'Restar días' ? `restando ${formData.cantidadDias || '[N]'} días a ${baseD}` :
+                                                     `tomando la base de ${baseD} (${formData.reglaDerivacionFecha || 'regla'})`;
+                                        return `Se generará ${d(formData.campoDestino)} ${resD}.`;
+                                      case 'Excluir registros del cruce': 
+                                        const eqE = formData.operadorCondicion === 'Entre rango' ? `entre ${formData.valorCondicionMin || '[mín]'} y ${formData.valorCondicionMax || '[máx]'}` : `${formData.operadorCondicion || '[operador]'} ${!['Está vacío', 'No está vacío', 'Entre rango'].includes(formData.operadorCondicion || '') ? (formData.valorCondicion || '[valor]') : ''}`.trim();
+                                        return `Los registros donde ${orig} sea ${eqE} se excluirán del cruce. Motivo: ${formData.motivoExclusion || "[motivo]"}`;
+                                      default: return "Configuración no completada";
+                                    }
+                                  })()
+                                : "Seleccione una operación para ver el resultado esperado"}
+                            </p>
+                          </div>
                         </div>
-                        {expandedSections.condicion ? <ChevronDown size={18} className="text-slate-400" /> : <ChevronRight size={18} className="text-slate-400" />}
-                      </button>
-                      {expandedSections.condicion && (
-                        <div className="animate-in slide-in-from-top-2 fade-in duration-200">
-                           <label className="block text-sm font-medium text-slate-700 mb-1.5">Lógica a aplicar <span className="text-rose-500">*</span></label>
-                           <div className={`p-3 rounded-xl focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all ${getFieldErrorClass(!formData.accion)}`}>
-                             <input 
-                               type="text" 
-                               value={formData.accion}
-                               onChange={(e) => setFormData({...formData, accion: e.target.value})}
-                               placeholder='Ej. Condición if/else, prefijo/sufijo a concatenar...'
-                               className="w-full bg-transparent border-none p-0 text-[14px] font-medium text-slate-800 focus:ring-0 placeholder:text-slate-400"
-                             />
-                           </div>
-                        </div>
-                      )}
                     </section>
                   </>
                 )}
@@ -1670,20 +2899,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                   <>
                     <div className="w-full h-px bg-slate-100" />
                     <section>
-                      <button 
-                        onClick={() => toggleSection('condicion')}
-                        className="w-full flex items-center justify-between gap-2 mb-4 text-slate-800 hover:text-primary transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Settings2 size={16} className="text-primary" />
-                          <h4 className="text-[14px] font-bold uppercase tracking-wider">Configuración de Operación</h4>
-                        </div>
-                        {expandedSections.condicion ? <ChevronDown size={18} className="text-slate-400" /> : <ChevronRight size={18} className="text-slate-400" />}
-                      </button>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Settings2 size={16} className="text-primary" />
+                        <h4 className="text-[14px] font-bold uppercase tracking-wider">Parámetros de la Operación</h4>
+                      </div>
                       
-                      {expandedSections.condicion && (
-                        <div className="p-5 bg-slate-50/80 border border-slate-100 rounded-xl space-y-4 animate-in slide-in-from-top-2 fade-in duration-200">
-                          {formData.subTipo === 'Limpiar espacios' && (
+                      <div className="p-5 bg-slate-50/80 border border-slate-100 rounded-xl space-y-4 animate-in slide-in-from-top-2 fade-in duration-200">
+                        {formData.subTipo === 'Limpiar espacios' && (
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1.5">Opciones <span className="text-rose-500">*</span></label>
                               <select
@@ -1920,12 +3142,11 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             </p>
                           </div>
                         </div>
-                      )}
                     </section>
                   </>
                 )}
 
-                {currentRuleType !== 'Normalización' && (
+                {currentRuleType === 'Validación' && (
                   <>
                     <div className="w-full h-px bg-slate-100" />
 
@@ -1947,10 +3168,10 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">Severidad <span className="text-rose-500">*</span></label>
                             <div className="flex gap-4">
                          <button 
-                           onClick={() => setFormData({...formData, nivel: "Fuerte"})}
+                           onClick={(e) => { e.preventDefault(); setFormData({...formData, nivel: "Fuerte"}); }}
                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm font-medium transition-all ${
                              formData.nivel === "Fuerte" 
-                             ? 'bg-slate-700 border-slate-700 text-white shadow-sm' 
+                             ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm' 
                              : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
                            }`}
                          >
@@ -1958,7 +3179,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                            Bloqueante
                          </button>
                          <button 
-                           onClick={() => setFormData({...formData, nivel: "Advertencia"})}
+                           onClick={(e) => { e.preventDefault(); setFormData({...formData, nivel: "Advertencia"}); }}
                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm font-medium transition-all ${
                              formData.nivel === "Advertencia" 
                              ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' 
