@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import type { Process } from "./ProcessCard";
 import { PreviewTestModal } from "./PreviewTestModal";
+import { FieldSelect } from './FieldSelect';
 
 interface PreparacionDatosSectionProps {
   process: Process;
@@ -522,46 +523,45 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
               </div>
             )}
             <div className="relative">
-              <select onChange={handleFieldSelect} defaultValue="" className={`w-full px-3 py-2 border rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(selectedFields.length === 0) || 'border-slate-300'}`}>
-                <option value="">Añadir campo...</option>
-                {fields.filter(f => !selectedFields.includes(f.id)).map(f => (
-                  <option key={f.id} value={f.id}>{f.id} ({f.type === 'derivado' ? 'Derivado(Transformación)' : f.source})</option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <FieldSelect
+                value=""
+                onChange={(val) => {
+                  if (val && !selectedFields.includes(val)) {
+                    setFormData({...formData, campo: [...selectedFields, val]});
+                  }
+                }}
+                options={fields.filter(f => !selectedFields.includes(f.id)).map(f => ({
+                  value: f.id,
+                  label: f.id,
+                  type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente'
+                }))}
+                hasError={selectedFields.length === 0}
+                placeholder="Añadir campo..."
+              />
             </div>
           </div>
         </div>
       );
     }
+
+    const disabledEmpty = !formData.fuente || formData.fuente.length === 0;
+
     return (
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo origen <span className="text-rose-500">*</span></label>
         <div className="relative">
-          <select 
-            disabled={!formData.fuente || formData.fuente.length === 0}
-            value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""} 
-            onChange={(e) => setFormData({...formData, campo: e.target.value})} 
-            className={`w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none ${(!formData.fuente || formData.fuente.length === 0) ? 'text-slate-400 bg-slate-50 cursor-not-allowed' : 'text-slate-800 cursor-pointer'} ${getFieldErrorClass(!formData.campo || formData.campo.length === 0) || 'border-slate-300'}`}
-          >
-            {(!formData.fuente || formData.fuente.length === 0) ? (
-              <option value="">Selecciona una fuente para ver sus campos disponibles.</option>
-            ) : (
-              <>
-                <option value="">Seleccione un campo...</option>
-                {fields.map(f => {
-                   let label = f.source;
-                   if (f.type === 'derivado') {
-                      label = `Derivado · Paso ${f.orden || 1}`;
-                   }
-                   return (
-                     <option key={f.id} value={f.id}>{f.id} ({label})</option>
-                   );
-                })}
-              </>
-            )}
-          </select>
-          <ChevronDown size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${(!formData.fuente || formData.fuente.length === 0) ? 'text-slate-300' : 'text-slate-400'}`} />
+          <FieldSelect
+            value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""}
+            onChange={(val) => setFormData({...formData, campo: val})}
+            options={fields.map(f => ({
+              value: f.id,
+              label: f.id,
+              type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente'
+            }))}
+            disabled={disabledEmpty}
+            hasError={!formData.campo || formData.campo.length === 0}
+            placeholder={disabledEmpty ? "Selecciona una fuente primero" : "Seleccione un campo..."}
+          />
         </div>
       </div>
     );
@@ -648,23 +648,26 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
               </div>
             ) : (
               <div className="relative mt-2">
-                <select onChange={e => {
-                  const val = e.target.value;
-                  if (val === '__crear_nuevo__') {
-                    setIsCreatingDestino(true);
-                  } else if (val && !selected.includes(val)) {
-                    setFormData({...formData, campoDestino: [...selected, val]});
-                  }
-                  e.target.value = "";
-                }} defaultValue="" className={`w-full px-3 py-2 border bg-white rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer ${getFieldErrorClass(selected.length === 0) || 'border-slate-300'}`}>
-                  <option value="">Seleccionar del listado (si existe)...</option>
-                  <option value="__crear_nuevo__" className="text-primary font-medium">+ Crear nuevo campo</option>
-                  <option disabled>──────────</option>
-                  {derivedFields.filter(f => !selected.includes(f.id)).map(f => (
-                    <option key={f.id} value={f.id}>{f.id}</option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <FieldSelect
+                  value=""
+                  onChange={(val) => {
+                    if (val === '__crear_nuevo__') {
+                      setIsCreatingDestino(true);
+                    } else if (val && !selected.includes(val)) {
+                      setFormData({...formData, campoDestino: [...selected, val]});
+                    }
+                  }}
+                  options={[
+                    { value: "__crear_nuevo__", label: "+ Crear nuevo campo", type: "" },
+                    ...derivedFields.filter(f => !selected.includes(f.id)).map(f => ({
+                      value: f.id,
+                      label: f.id,
+                      type: 'Derivado'
+                    }))
+                  ]}
+                  hasError={selected.length === 0}
+                  placeholder="Seleccionar del listado (si existe)..."
+                />
               </div>
             )}
           </div>
@@ -734,26 +737,26 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
         ) : (
           <div>
             <div className="relative">
-              <select value={(formData.campoDestino as string) || ""} onChange={e => {
-                const val = e.target.value;
-                if (val === '__crear_nuevo__') {
-                  setIsCreatingDestino(true);
-                  setFormData({...formData, campoDestino: ''});
-                } else {
-                  setFormData({...formData, campoDestino: val});
-                }
-              }} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoDestino || formData.campoDestino.length === 0) || 'border-slate-300'}`}>
-                <option value="">Seleccionar del listado (si existe)...</option>
-                <option value="__crear_nuevo__" className="text-primary font-medium">+ Crear nuevo campo</option>
-                {derivedFields.length > 0 && <option disabled>──────────</option>}
-                {derivedFields.map(f => (
-                  <option key={f.id} value={f.id}>{f.id}</option>
-                ))}
-                {formData.campoDestino && !derivedFields.find(f => f.id === formData.campoDestino) && formData.campoDestino !== '__crear_nuevo__' && (
-                  <option value={formData.campoDestino as string}>{formData.campoDestino as string}</option>
-                )}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <FieldSelect
+                value={(formData.campoDestino as string) || ""}
+                onChange={(val) => {
+                  if (val === '__crear_nuevo__') {
+                    setIsCreatingDestino(true);
+                    setFormData({...formData, campoDestino: ''});
+                  } else {
+                    setFormData({...formData, campoDestino: val});
+                  }
+                }}
+                options={[
+                  { value: "__crear_nuevo__", label: "+ Crear nuevo campo", type: "" },
+                  ...derivedFields.map(f => ({ value: f.id, label: f.id, type: 'Derivado' })),
+                  ...(formData.campoDestino && !derivedFields.find(f => f.id === formData.campoDestino) && formData.campoDestino !== '__crear_nuevo__' 
+                    ? [{ value: formData.campoDestino as string, label: formData.campoDestino as string, type: 'Derivado' }] 
+                    : [])
+                ]}
+                hasError={!formData.campoDestino || formData.campoDestino.length === 0}
+                placeholder="Seleccionar del listado (si existe)..."
+              />
             </div>
           </div>
         )}
@@ -2212,17 +2215,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                               </div>
                             ) : (
                               <div className="relative">
-                                <select
+                                <FieldSelect
                                   value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""}
-                                  onChange={(e) => setFormData({...formData, campo: e.target.value})}
-                                  className={`w-full px-3 py-2 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campo || formData.campo.length === 0)}`}
-                                >
-                                  <option value="">Seleccione un campo...</option>
-                                  {getAvailableFieldsList().map(f => (
-                                    <option key={f.id} value={f.id}>{f.id} {f.type === 'derivado' ? `(Derivado de ${f.source})` : ''}</option>
-                                  ))}
-                                </select>
-                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                  onChange={val => setFormData({...formData, campo: val})}
+                                  options={getAvailableFieldsList().map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                  hasError={!formData.campo || formData.campo.length === 0}
+                                  placeholder="Seleccione un campo..."
+                                />
                               </div>
                             )}
                           </div>
@@ -2575,12 +2574,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                 {renderCampoOrigen(false)}
                                 <div>
                                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo a restar <span className="text-rose-500">*</span></label>
-                                  <select value={formData.campoARestar || ""} onChange={e => setFormData({...formData, campoARestar: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.campoARestar) || 'border-slate-300'}`}>
-                                    <option value="">Selecciona campo...</option>
-                                    {getAvailableFieldsList(formData.fuente).map(f => (
-                                      <option key={f.id} value={f.id}>{f.id}</option>
-                                    ))}
-                                  </select>
+                                  <FieldSelect
+                                    value={formData.campoARestar || ""}
+                                    onChange={val => setFormData({...formData, campoARestar: val})}
+                                    options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                    hasError={!formData.campoARestar}
+                                    placeholder="Selecciona campo..."
+                                  />
                                 </div>
                               </div>
                             )}
@@ -2590,12 +2590,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                 {renderCampoOrigen(false)}
                                 <div>
                                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo operador <span className="text-rose-500">*</span></label>
-                                  <select value={formData.campoOperador || ""} onChange={e => setFormData({...formData, campoOperador: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.campoOperador) || 'border-slate-300'}`}>
-                                    <option value="">Selecciona campo...</option>
-                                    {getAvailableFieldsList(formData.fuente).map(f => (
-                                      <option key={f.id} value={f.id}>{f.id}</option>
-                                    ))}
-                                  </select>
+                                  <FieldSelect
+                                    value={formData.campoOperador || ""}
+                                    onChange={val => setFormData({...formData, campoOperador: val})}
+                                    options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                    hasError={!formData.campoOperador}
+                                    placeholder="Selecciona campo..."
+                                  />
                                 </div>
                               </div>
                             )}
@@ -2604,21 +2605,23 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Primer campo <span className="text-rose-500">*</span></label>
-                                  <select value={formData.primerCampo || ""} onChange={e => setFormData({...formData, primerCampo: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.primerCampo) || 'border-slate-300'}`}>
-                                    <option value="">Selecciona campo...</option>
-                                    {getAvailableFieldsList(formData.fuente).map(f => (
-                                      <option key={f.id} value={f.id}>{f.id}</option>
-                                    ))}
-                                  </select>
+                                  <FieldSelect
+                                    value={formData.primerCampo || ""}
+                                    onChange={val => setFormData({...formData, primerCampo: val})}
+                                    options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                    hasError={!formData.primerCampo}
+                                    placeholder="Selecciona campo..."
+                                  />
                                 </div>
                                 <div>
                                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Segundo campo <span className="text-rose-500">*</span></label>
-                                  <select value={formData.segundoCampo || ""} onChange={e => setFormData({...formData, segundoCampo: e.target.value})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.segundoCampo) || 'border-slate-300'}`}>
-                                    <option value="">Selecciona campo...</option>
-                                    {getAvailableFieldsList(formData.fuente).map(f => (
-                                      <option key={f.id} value={f.id}>{f.id}</option>
-                                    ))}
-                                  </select>
+                                  <FieldSelect
+                                    value={formData.segundoCampo || ""}
+                                    onChange={val => setFormData({...formData, segundoCampo: val})}
+                                    options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                    hasError={!formData.segundoCampo}
+                                    placeholder="Selecciona campo..."
+                                  />
                                 </div>
                               </div>
                             )}
@@ -2674,12 +2677,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                               <div className="space-y-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
                                 <div>
                                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo indicador <span className="text-rose-500">*</span></label>
-                                  <select value={formData.campoIndicador || ""} onChange={e => setFormData({...formData, campoIndicador: e.target.value, equivalenciasSigno: formData.equivalenciasSigno?.length ? formData.equivalenciasSigno : [{valor: '', accion: 'Dejar positivo'}]})} className={`w-full px-3 py-2 border rounded-lg text-sm bg-white ${getFieldErrorClass(!formData.campoIndicador) || 'border-slate-300'}`}>
-                                    <option value="">Selecciona campo indicador...</option>
-                                    {getAvailableFieldsList(formData.fuente).map(f => (
-                                      <option key={f.id} value={f.id}>{f.id}</option>
-                                    ))}
-                                  </select>
+                                  <FieldSelect
+                                    value={formData.campoIndicador || ""}
+                                    onChange={val => setFormData({...formData, campoIndicador: val, equivalenciasSigno: formData.equivalenciasSigno?.length ? formData.equivalenciasSigno : [{valor: '', accion: 'Dejar positivo'}]})}
+                                    options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                    hasError={!formData.campoIndicador}
+                                    placeholder="Selecciona campo indicador..."
+                                  />
                                 </div>
                                 
                                 {formData.campoIndicador && (
@@ -2799,14 +2803,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                                   <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5 border-b border-slate-100 pb-1">Campo fecha origen <span className="text-rose-500">*</span></label>
                                     <div className="relative">
-                                      <select value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""} onChange={e => setFormData({...formData, campo: e.target.value})} className={`w-full px-3 py-2 border bg-white rounded-lg text-sm appearance-none ${getFieldErrorClass(!formData.campo || formData.campo.length === 0) || 'border-slate-300'}`}>
-                                        <option value="">Selecciona campo origen</option>
-                                        {/* Ideally filter to only dates, but for MVP show available fields */
-                                          getAvailableFieldsList(formData.fuente).map(f => (
-                                          <option key={f.id} value={f.id}>{f.id}</option>
-                                        ))}
-                                      </select>
-                                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                      <FieldSelect
+                                        value={Array.isArray(formData.campo) ? formData.campo[0] || "" : formData.campo || ""}
+                                        onChange={val => setFormData({...formData, campo: val})}
+                                        options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                        hasError={!formData.campo || formData.campo.length === 0}
+                                        placeholder="Selecciona campo origen"
+                                      />
                                     </div>
                                   </div>
                                 )}
@@ -3253,16 +3256,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
                               {formData.subTipo === 'Comparación de totales entre fuentes' ? 'Campo numérico de Fuente A' : 'Campo a sumar'} <span className="text-rose-500">*</span>
                             </label>
-                            <select
+                            <FieldSelect
                               value={formData.campoASumar || ""}
-                              onChange={(e) => setFormData({...formData, campoASumar: e.target.value})}
-                              className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoASumar)}`}
-                            >
-                              <option value="">Seleccionar campo...</option>
-                              {getAvailableFieldsList(formData.fuente).map(field => (
-                                <option key={field.id} value={field.id}>{field.id}</option>
-                              ))}
-                            </select>
+                              onChange={val => setFormData({...formData, campoASumar: val})}
+                              options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                              hasError={!formData.campoASumar}
+                              placeholder="Seleccionar campo..."
+                            />
                           </div>
                         )}
 
@@ -3315,16 +3315,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             {(formData.origenValorControl === 'Último valor de un campo' || formData.origenValorControl === 'Primer valor de un campo') && (
                               <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo de control <span className="text-rose-500">*</span></label>
-                                <select
+                                <FieldSelect
                                   value={formData.campoControl || ""}
-                                  onChange={(e) => setFormData({...formData, campoControl: e.target.value})}
-                                  className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoControl)}`}
-                                >
-                                  <option value="">Seleccionar campo...</option>
-                                  {getAvailableFieldsList(formData.fuente).map(field => (
-                                    <option key={field.id} value={field.id}>{field.id}</option>
-                                  ))}
-                                </select>
+                                  onChange={val => setFormData({...formData, campoControl: val})}
+                                  options={getAvailableFieldsList(formData.fuente).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                  hasError={!formData.campoControl}
+                                  placeholder="Seleccionar campo..."
+                                />
                               </div>
                             )}
 
@@ -3424,16 +3421,13 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             {formData.fuenteAdicional && (
                               <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo numérico de Fuente B <span className="text-rose-500">*</span></label>
-                                <select
+                                <FieldSelect
                                   value={formData.campoAdicional || ""}
-                                  onChange={(e) => setFormData({...formData, campoAdicional: e.target.value})}
-                                  className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoAdicional)}`}
-                                >
-                                  <option value="">Seleccionar campo...</option>
-                                  {getAvailableFieldsList(formData.fuenteAdicional).map(field => (
-                                    <option key={field.id} value={field.id}>{field.id}</option>
-                                  ))}
-                                </select>
+                                  onChange={val => setFormData({...formData, campoAdicional: val})}
+                                  options={getAvailableFieldsList(formData.fuenteAdicional).map(f => ({ value: f.id, label: f.id, type: f.type === 'derivado' ? 'Derivado' : f.type === 'normalizado' ? 'Normalizado' : 'Fuente' }))}
+                                  hasError={!formData.campoAdicional}
+                                  placeholder="Seleccionar campo..."
+                                />
                               </div>
                             )}
                           </>

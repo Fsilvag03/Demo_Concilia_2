@@ -12,7 +12,8 @@ import {
   AlertCircle,
   Power,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  ArrowLeftRight
 } from 'lucide-react';
 import type { Process } from './ProcessCard';
 import { PasoCruceModal } from './PasoCruceModal';
@@ -34,11 +35,13 @@ interface CruceStep {
   type: string;
   criteria: string;
   errorMsg?: string;
+  configData?: any;
 }
 
 export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSectionProps> = ({ process, onChange }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'Todas' | 'Activas' | 'Inactivas' | 'Incompletas' | 'Con error'>('Todas');
+  const [localRectorSource, setLocalRectorSource] = useState(process.rectorSource || process.sources[0] || '');
 
   const [steps, setSteps] = useState<CruceStep[]>(() => {
     const s1 = process.sources[0] || 'Fuente 1';
@@ -54,7 +57,14 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
         status: 'Completo',
         sources: `${s1} vs ${s2}`,
         type: '1:1',
-        criteria: 'predio/título + monto → coincidencia exacta'
+        criteria: 'predio/título + monto → coincidencia exacta',
+        configData: {
+          source1: s1, source2: s2, type: '1:1',
+          criteria: [
+            { id: 'c1', field1: 'predio/título', comparisonType: 'Exacta', field2: 'predio/título' },
+            { id: 'c2', field1: 'monto', comparisonType: 'Exacta', field2: 'monto' }
+          ]
+        }
       },
       {
         id: 'step2',
@@ -64,7 +74,14 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
         status: 'Completo',
         sources: `${s3} vs ${s2}`,
         type: '1:1',
-        criteria: 'código documento + monto → coincidencia exacta'
+        criteria: 'código documento + monto → coincidencia exacta',
+        configData: {
+          source1: s3, source2: s2, type: '1:1',
+          criteria: [
+            { id: 'c1', field1: 'código documento', comparisonType: 'Exacta', field2: 'código documento' },
+            { id: 'c2', field1: 'monto', comparisonType: 'Exacta', field2: 'monto' }
+          ]
+        }
       },
       {
         id: 'step3',
@@ -74,7 +91,14 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
         status: 'Completo',
         sources: `${s1} vs ${s3}`,
         type: '1:N',
-        criteria: 'referencia + fecha → suma de montos'
+        criteria: 'referencia + fecha → suma de montos',
+        configData: {
+          source1: s1, source2: s3, type: '1:N',
+          criteria: [
+            { id: 'c1', field1: 'referencia', comparisonType: 'Exacta', field2: 'referencia' },
+            { id: 'c2', field1: 'fecha', comparisonType: 'Exacta', field2: 'fecha' }
+          ]
+        }
       },
       {
         id: 'step4',
@@ -85,7 +109,13 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
         sources: `${s2} vs ${s1}`,
         type: '1:1',
         criteria: 'falta definir campo de comparación',
-        errorMsg: 'falta definir campo de comparación'
+        errorMsg: 'falta definir campo de comparación',
+        configData: {
+          source1: s2, source2: s1, type: '1:1',
+          criteria: [
+            { id: 'c1', field1: 'monto', comparisonType: 'Exacta', field2: '' }
+          ]
+        }
       }
     ];
   });
@@ -126,9 +156,9 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
   };
 
   const handleEditStep = (step: CruceStep) => {
-    // Parse step data into modal format
+    // If we have saved config data, use it, otherwise fallback
     const sourcesArr = step.sources.split(' vs ');
-    const modalData = {
+    const modalData = step.configData || {
       id: step.id,
       name: step.name,
       description: '',
@@ -144,15 +174,28 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
   };
 
   const handleSaveStep = (modalData: any) => {
+    const validCriteria = modalData.criteria.filter((c: any) => c.field1 && c.field2);
+    const criteriaSummary = validCriteria.length > 0 
+      ? validCriteria.map((c: any) => {
+          let field1 = c.field1.replace(/_/g, ' ');
+          let field2 = c.field2.replace(/_/g, ' ');
+          let comp = 'exacta';
+          if (c.comparisonType === 'Tolerancia Monto') comp = `tol. ±${c.param || '?'}`;
+          else if (c.comparisonType === 'Rango Fecha') comp = `rango ±${c.param || '?'}d`;
+          return `${field1} ↔ ${field2} (${comp})`;
+        }).join(' • ')
+      : 'Sin criterios válidos';
+
     const newStep: CruceStep = {
       id: modalData.id || `step${Date.now()}`,
       order: steps.length + 1,
       name: modalData.name,
       active: true,
-      status: 'Completo',
+      status: validCriteria.length > 0 ? 'Completo' : 'Incompleto',
       sources: `${modalData.source1} vs ${modalData.source2}`,
       type: modalData.type,
-      criteria: modalData.criteria.map((c: any) => c.field1).join(' + ') + ' → Coincidencia ' + modalData.criteria[0]?.comparisonType,
+      criteria: criteriaSummary,
+      configData: modalData
     };
 
     if (modalData.id) {
@@ -191,6 +234,38 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
     }
   };
 
+  const renderCriteria = (step: CruceStep) => {
+    if (step.configData?.criteria && step.configData.criteria.length > 0) {
+      const validCriteria = step.configData.criteria.filter((c: any) => c.field1 && c.field2);
+      if (validCriteria.length === 0) return <span className="text-slate-400 italic">Sin criterios válidos</span>;
+
+      return (
+        <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-0.5">
+          {validCriteria.map((c: any, i: number) => {
+            const f1 = c.field1.replace(/_/g, ' ');
+            const f2 = c.field2.replace(/_/g, ' ');
+            return (
+               <div key={i} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 md:py-1 rounded-md text-[11px] text-slate-700 font-medium whitespace-nowrap shadow-sm">
+                 <span>{f1}</span>
+                 <ArrowLeftRight size={10} className="text-slate-400 shrink-0" />
+                 <span>{f2}</span>
+                 {c.comparisonType !== 'Exacta' && (
+                   <>
+                     <span className="text-slate-300 select-none mx-0.5 md:mx-1">•</span>
+                     {c.comparisonType === 'Tolerancia Monto' && <span className="text-amber-600 font-bold tracking-tight">±{c.param || '?'}</span>}
+                     {c.comparisonType === 'Rango Fecha' && <span className="text-indigo-600 font-bold tracking-tight">±{c.param || '?'}d</span>}
+                   </>
+                 )}
+               </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return <span className={step.status !== 'Completo' ? 'text-slate-400 italic' : 'text-slate-600'}>{step.criteria}</span>;
+  };
+
   return (
     <div className="max-w-5xl mx-auto animate-in fade-in duration-300 pb-12" onClick={closeMenu}>
       {/* Header */}
@@ -212,37 +287,61 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
 
       {steps.length > 0 ? (
         <div className="space-y-6">
-          {/* Estrategia Activa Summary */}
-          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+          {/* Configuración Mínima */}
+          <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden mb-6">
             <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-100">
-                  <GitMerge size={20} className="text-indigo-600" />
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-200 shrink-0 mt-0.5">
+                  <GitMerge size={20} className="text-slate-600" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h4 className="text-[14px] font-bold text-slate-800">Conciliación secuencial</h4>
-                    <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      ESTRATEGIA ACTIVA
-                    </span>
-                  </div>
-                  <div className="flex items-center text-[12.5px] text-slate-500 flex-wrap gap-x-2 gap-y-1">
-                    <span className="text-slate-600">Fuente rectora: </span>
-                    <span className="font-semibold text-slate-700">{process.rectorSource || <span className="text-amber-600 font-bold">No definida</span>}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-[14px] font-bold text-slate-800 mb-1.5">Conciliación secuencial por pasos</h4>
+                  
+                  <div className="flex items-center text-[12px] text-slate-500 flex-wrap gap-x-2 gap-y-1">
+                    <span className="font-semibold text-slate-600">{steps.length} pasos configurados</span>
                     <span className="text-slate-300">•</span>
-                    <span className="font-medium text-slate-600">{activeStepsCount} pasos activos</span>
+                    <span className="text-slate-600">{activeStepsCount} activos</span>
                     {incompleteCount > 0 && (
                       <>
                         <span className="text-slate-300">•</span>
-                        <span className="text-amber-600 font-bold flex items-center gap-1.5"><AlertTriangle size={12} className="shrink-0"/> {incompleteCount} incompleto{incompleteCount !== 1 ? 's' : ''}</span>
+                        <span className="text-amber-600 font-bold flex items-center gap-1">
+                          <AlertTriangle size={11} className="shrink-0"/>
+                          {incompleteCount} requiere{incompleteCount !== 1 ? 'n' : ''} revisión
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
               </div>
-              <button className="text-[13px] font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-colors px-4 py-2 rounded-lg border border-slate-200 shrink-0 bg-white shadow-sm">
-                Editar estrategia
-              </button>
+
+              <div className="flex flex-col sm:items-end gap-2 text-[13px] sm:pl-4 sm:border-l sm:border-slate-100 shrink-0 min-w-fit">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 font-medium whitespace-nowrap">Fuente rectora:</span>
+                  {process.sources.length === 0 ? (
+                    <span className="text-slate-400 italic">Configura al menos una...</span>
+                  ) : (
+                    <select 
+                      value={localRectorSource}
+                      onChange={(e) => {
+                        setLocalRectorSource(e.target.value);
+                        onChange();
+                      }}
+                      className={`text-[12.5px] font-semibold bg-slate-50 border rounded-full px-3 py-1 focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-colors border-slate-200 text-slate-700 hover:bg-white`}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {process.sources.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                {localRectorSource && !process.sources.includes(localRectorSource) && (
+                  <span className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                    <AlertTriangle size={12} />
+                    Selecciona una nueva fuente.
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -297,14 +396,14 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
                        </span>
                        {renderStatusBadge(step.status)}
                     </div>
-                    <div className="flex items-center text-[13px] text-slate-500 flex-wrap gap-y-1">
-                      <span className="font-medium text-slate-700">{step.sources}</span>
-                      <span className="mx-2 text-slate-300">•</span>
-                      <span className="font-medium">{step.type}</span>
-                      <span className="mx-2 text-slate-300">•</span>
-                      <span className={step.status !== 'Completo' ? 'text-slate-400 italic' : ''}>
-                        {step.criteria}
+                    <div className="flex items-center text-[13px] text-slate-500 flex-wrap gap-y-2 gap-x-3">
+                      <span className="font-medium text-slate-700 flex items-center gap-1.5">
+                        {step.sources.split(' vs ')[0]}
+                        <ArrowLeftRight size={14} className="text-slate-400" />
+                        {step.sources.split(' vs ')[1] || ''}
                       </span>
+                      <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">{step.type}</span>
+                      {renderCriteria(step)}
                     </div>
                   </div>
 
