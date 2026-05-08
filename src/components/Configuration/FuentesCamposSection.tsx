@@ -54,6 +54,7 @@ interface FuenteConfig {
   nombre: string;
   descripcion: string;
   tipoOrigen: TipoOrigen;
+  nombreHoja?: string;
   participacion: FuenteParticipacion;
   modoCarga: CargaModo;
   estado: "completo" | "incompleto" | "pendiente";
@@ -192,6 +193,11 @@ export function FuentesCamposSection({
 
   const selectedFuente = fuentes.find((f) => f.id === selectedFuenteId) || null;
 
+  const handleFuenteFieldChange = (field: keyof FuenteConfig, value: any) => {
+    setFuentes(prev => prev.map(f => f.id === selectedFuenteId ? { ...f, [field]: value } : f));
+    onChange();
+  };
+
   const renderStatus = (estado: string) => {
     switch (estado) {
       case "completo":
@@ -270,8 +276,8 @@ export function FuentesCamposSection({
                 </label>
                 <input
                   type="text"
-                  defaultValue={selectedFuente.nombre}
-                  onChange={onChange}
+                  value={selectedFuente.nombre}
+                  onChange={(e) => handleFuenteFieldChange("nombre", e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                 />
               </div>
@@ -281,8 +287,8 @@ export function FuentesCamposSection({
                 </label>
                 <input
                   type="text"
-                  defaultValue={selectedFuente.descripcion}
-                  onChange={onChange}
+                  value={selectedFuente.descripcion}
+                  onChange={(e) => handleFuenteFieldChange("descripcion", e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                   placeholder="Propósito de esta fuente..."
                 />
@@ -293,8 +299,8 @@ export function FuentesCamposSection({
                   Tipo de origen
                 </label>
                 <select
-                  defaultValue={selectedFuente.tipoOrigen}
-                  onChange={onChange}
+                  value={selectedFuente.tipoOrigen}
+                  onChange={(e) => handleFuenteFieldChange("tipoOrigen", e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                 >
                   <option>Excel</option>
@@ -307,13 +313,29 @@ export function FuentesCamposSection({
                   <option>API</option>
                 </select>
               </div>
+
+              {selectedFuente.tipoOrigen === "Excel" && (
+                <div className="animate-in fade-in zoom-in duration-200">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Hoja de datos
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedFuente.nombreHoja || ""}
+                    onChange={(e) => handleFuenteFieldChange("nombreHoja", e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    placeholder="Ej. Hoja1"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Participación <span className="text-rose-500">*</span>
                 </label>
                 <select
-                  defaultValue={selectedFuente.participacion}
-                  onChange={onChange}
+                  value={selectedFuente.participacion}
+                  onChange={(e) => handleFuenteFieldChange("participacion", e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                 >
                   <option>Obligatoria</option>
@@ -327,8 +349,8 @@ export function FuentesCamposSection({
                   Modo de carga
                 </label>
                 <select
-                  defaultValue={selectedFuente.modoCarga}
-                  onChange={onChange}
+                  value={selectedFuente.modoCarga}
+                  onChange={(e) => handleFuenteFieldChange("modoCarga", e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                 >
                   <option>Manual</option>
