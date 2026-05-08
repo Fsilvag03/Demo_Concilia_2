@@ -3233,15 +3233,18 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                         {/* Registros considerados */}
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1.5">Registros considerados <span className="text-rose-500">*</span></label>
-                          <select
-                            value={formData.registrosConsiderados || "Registros incluidos para conciliación"}
-                            onChange={(e) => setFormData({...formData, registrosConsiderados: e.target.value})}
-                            className="w-full px-3 py-2 rounded-lg text-sm text-slate-700 border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer"
-                          >
-                            <option value="Registros incluidos para conciliación">Registros incluidos para conciliación</option>
-                            <option value="Todos los registros cargados">Todos los registros cargados</option>
-                            <option value="Registros excluidos">Registros excluidos</option>
-                          </select>
+                          <div className="relative">
+                            <select
+                              value={formData.registrosConsiderados || "Registros incluidos para conciliación"}
+                              onChange={(e) => setFormData({...formData, registrosConsiderados: e.target.value})}
+                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer"
+                            >
+                              <option value="Registros incluidos para conciliación">Registros incluidos para conciliación</option>
+                              <option value="Todos los registros cargados">Todos los registros cargados</option>
+                              <option value="Registros excluidos">Registros excluidos</option>
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          </div>
                         </div>
 
                         {/* Extra fields based on subTipo */}
@@ -3405,15 +3408,18 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1.5">Registros considerados de Fuente B <span className="text-rose-500">*</span></label>
-                              <select
-                                value={formData.registrosConsideradosB || "Registros incluidos para conciliación"}
-                                onChange={(e) => setFormData({...formData, registrosConsideradosB: e.target.value})}
-                                className="w-full px-3 py-2 rounded-lg text-sm text-slate-700 border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer"
-                              >
-                                <option value="Registros incluidos para conciliación">Registros incluidos para conciliación</option>
-                                <option value="Todos los registros cargados">Todos los registros cargados</option>
-                                <option value="Registros excluidos">Registros excluidos</option>
-                              </select>
+                              <div className="relative">
+                                <select
+                                  value={formData.registrosConsideradosB || "Registros incluidos para conciliación"}
+                                  onChange={(e) => setFormData({...formData, registrosConsideradosB: e.target.value})}
+                                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer"
+                                >
+                                  <option value="Registros incluidos para conciliación">Registros incluidos para conciliación</option>
+                                  <option value="Todos los registros cargados">Todos los registros cargados</option>
+                                  <option value="Registros excluidos">Registros excluidos</option>
+                                </select>
+                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                              </div>
                             </div>
                             {formData.fuenteAdicional && (
                               <div>
