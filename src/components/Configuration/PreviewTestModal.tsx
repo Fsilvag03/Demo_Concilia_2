@@ -28,6 +28,8 @@ interface TestRow {
 }
 
 export const PreviewTestModal: React.FC<PreviewTestModalProps> = ({ onClose, reglas }) => {
+  const uniqueSources = Array.from(new Set(reglas.flatMap(r => Array.isArray(r.fuente) ? r.fuente : [r.fuente]))).filter(Boolean) as string[];
+
   const [selectedSource, setSelectedSource] = useState('Todas');
   const [testFile, setTestFile] = useState('temporal');
   const [execState, setExecState] = useState<ExecState>('idle');
@@ -151,9 +153,9 @@ export const PreviewTestModal: React.FC<PreviewTestModalProps> = ({ onClose, reg
                     disabled={execState !== 'idle' && execState !== 'completed'}
                   >
                     <option value="Todas">Todas las fuentes</option>
-                    <option value="Banred">Banred</option>
-                    <option value="Sistarbanc">Sistarbanc</option>
-                    <option value="Municipio">Municipio</option>
+                    {uniqueSources.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
               </div>

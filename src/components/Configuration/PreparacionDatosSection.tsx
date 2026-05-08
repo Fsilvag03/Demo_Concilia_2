@@ -40,7 +40,12 @@ interface PreparacionDatosSectionProps {
 }
 
 type NivelRegla = "Fuerte" | "Advertencia";
-type TipoRegla = "Validación" | "Normalización" | "Transformación";
+type TipoRegla = "Validación" | "Normalización" | "Transformación" | "Control de consistencia";
+
+export type ConsistencyControlType =
+  | "Suma contra valor de control"
+  | "Conteo de registros"
+  | "Comparación de totales entre fuentes";
 
 export type ValidationType =
   | "Campo obligatorio"
@@ -102,7 +107,7 @@ export interface ReglaPreparacion {
   fuente: string | string[];
   campo: string | string[];
   tipo: TipoRegla;
-  subTipo?: ValidationType | NormalizationType | TransformationType | string;
+  subTipo?: ValidationType | NormalizationType | TransformationType | ConsistencyControlType | string;
   accion?: string;
   activa: boolean;
   nivel?: NivelRegla;
@@ -110,6 +115,24 @@ export interface ReglaPreparacion {
   criterio?: string;
   dependenciaInactiva?: boolean;
   orden?: number;
+
+  // For Control de consistencia
+  registrosConsiderados?: string;
+  registrosConsideradosB?: string;
+  campoControl?: string;
+  origenValorControl?: string;
+  valorFijoControl?: string;
+  origenTotal?: string;
+  campoTotalInformado?: string;
+  valorTotalInformado?: string;
+  condicionComparacion?: string;
+  condicionConteo?: string;
+  tolerancia?: string;
+  fuenteAdicional?: string;
+  campoAdicional?: string;
+  cantidadMinimaRegistros?: number | string;
+  cantidadMaximaRegistros?: number | string;
+  campoASumar?: string;
 
   // New fields for specific validations
   condicionMonto?: string;
@@ -335,12 +358,50 @@ const mockReglas: ReglaPreparacion[] = [
     activa: true,
     dependenciaInactiva: true,
   },
+  {
+    id: "c1",
+    nombre: "Control cuadre saldos",
+    descripcion: "Validar que la suma de abonos coincida con el saldo final reportado en el extracto.",
+    fuente: "Extracto Bancario",
+    campo: "",
+    tipo: "Control de consistencia",
+    subTipo: "Suma contra valor de control",
+    campoASumar: "abonos",
+    origenValorControl: "Último valor de un campo",
+    campoControl: "saldo_final",
+    condicionComparacion: "Igual a",
+    registrosConsiderados: "Registros incluidos para conciliación",
+    activa: true,
+    nivel: "Fuerte",
+  },
 ];
 
 export function PreparacionDatosSection({ process, onChange }: PreparacionDatosSectionProps) {
   const [viewMode, setViewMode] = useState<"stepper" | "detail">("stepper");
   const [selectedSection, setSelectedSection] = useState<TipoRegla | null>(null);
-  const [reglas, setReglas] = useState<ReglaPreparacion[]>(mockReglas);
+  const [reglas, setReglas] = useState<ReglaPreparacion[]>(() => {
+    const s1 = process.sources[0] || "Fuente 1";
+    const s2 = process.sources[1] || "Fuente 2";
+    const s3 = process.sources.length > 2 ? process.sources[2] : (process.sources[0] || "Fuente 3");
+
+    return mockReglas.map(r => {
+      let f = r.fuente;
+      if (typeof f === 'string') {
+        if (f === "Banco" || f === "Extracto Bancario" || f === "Cash Pagos") f = s1;
+        else if (f === "Municipio" || f === "Cobros ERP" || f === "Cuenta 2056" || f === "Input") f = s2;
+        else if (f === "Banred" || f === "Portal Empresas") f = s3;
+        else f = s1;
+      } else if (Array.isArray(f)) {
+        f = f.map(x => {
+          if (x === "Banco" || x === "Extracto Bancario" || x === "Cash Pagos") return s1;
+          if (x === "Municipio" || x === "Cobros ERP" || x === "Cuenta 2056" || x === "Input") return s2;
+          if (x === "Banred" || x === "Portal Empresas") return s3;
+          return s1;
+        });
+      }
+      return { ...r, fuente: f };
+    });
+  });
   const [editedBlocks, setEditedBlocks] = useState<Set<TipoRegla>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRegla, setEditingRegla] = useState<ReglaPreparacion | null>(null);
@@ -1619,6 +1680,14 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
       iconClasses: "bg-violet-50 text-violet-600 border-violet-100 group-hover:bg-violet-100",
       title: "Transformaciones",
       desc: "Genera campos derivados o estructuras necesarias para conciliar."
+    },
+    {
+      id: "Control de consistencia" as TipoRegla,
+      num: "4",
+      icon: AlertTriangle,
+      iconClasses: "bg-amber-50 text-amber-600 border-amber-100 group-hover:bg-amber-100",
+      title: "Controles de consistencia",
+      desc: "Verifica coherencia del conjunto de datos antes del cruce."
     }
   ];
 
@@ -2014,17 +2083,15 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                           className={`w-full px-3 py-2 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.fuente)}`}
                         >
                           <option value="">Selecciona una fuente</option>
-                          <option value="Extracto Bancario">Extracto Bancario</option>
-                          <option value="Cobros ERP">Cobros ERP</option>
-                          <option value="Municipio">Municipio</option>
-                          <option value="Banred">Banred</option>
-                          <option value="Banco">Banco</option>
+                          {process.sources.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
                         </select>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          {currentRuleType === 'Validación' ? 'Tipo de validación' : currentRuleType === 'Transformación' ? 'Operación de transformación' : 'Operación de normalización'} <span className="text-rose-500">*</span>
+                          {currentRuleType === 'Validación' ? 'Tipo de validación' : currentRuleType === 'Transformación' ? 'Operación de transformación' : currentRuleType === 'Control de consistencia' ? 'Operación de control' : 'Operación de normalización'} <span className="text-rose-500">*</span>
                         </label>
                         <select 
                           value={formData.subTipo || ""}
@@ -2085,7 +2152,7 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                               <option value="Normalizar número o monto">Normalizar número o monto</option>
                               <option value="Normalizar valores vacíos">Normalizar valores vacíos</option>
                             </>
-                          ) : (
+                          ) : currentRuleType === 'Transformación' ? (
                             <>
                               <option value="Extraer valor de un campo">Extraer valor de un campo</option>
                               <option value="Separar campo en varios campos">Separar campo en varios campos</option>
@@ -2096,11 +2163,17 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                               <option value="Derivar fecha">Derivar fecha</option>
                               <option value="Excluir registros del cruce">Excluir registros del cruce</option>
                             </>
+                          ) : (
+                            <>
+                              <option value="Suma contra valor de control">Suma contra valor de control</option>
+                              <option value="Conteo de registros">Conteo de registros</option>
+                              <option value="Comparación de totales entre fuentes">Comparación de totales entre fuentes</option>
+                            </>
                           )}
                         </select>
                       </div>
 
-                      {!(currentRuleType === 'Transformación' || (currentRuleType === 'Validación' && (formData.subTipo === "Estructura requerida" || formData.subTipo === "Cantidad mínima de registros"))) && (
+                      {!(currentRuleType === 'Control de consistencia' || currentRuleType === 'Transformación' || (currentRuleType === 'Validación' && (formData.subTipo === "Estructura requerida" || formData.subTipo === "Cantidad mínima de registros"))) && (
                         <div className="sm:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
                           <label className="block text-sm font-medium text-slate-700 mb-1.5">
                             {currentRuleType === 'Validación' && formData.subTipo === 'Duplicidad' ? 'Campos asociados' : 'Campo asociado'} <span className="text-rose-500">*</span>
@@ -3148,7 +3221,261 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
                   </>
                 )}
 
-                {currentRuleType === 'Validación' && (
+                {currentRuleType === 'Control de consistencia' && (
+                  <>
+                    <div className="w-full h-px bg-slate-100" />
+                    <section>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Settings2 size={16} className="text-primary" />
+                        <h4 className="text-[14px] font-bold uppercase tracking-wider">Parámetros del Control</h4>
+                      </div>
+                      <div className="p-5 bg-slate-50/80 border border-slate-100 rounded-xl space-y-4 animate-in slide-in-from-top-2 fade-in duration-200">
+                        {/* Registros considerados */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Registros considerados <span className="text-rose-500">*</span></label>
+                          <select
+                            value={formData.registrosConsiderados || "Registros incluidos para conciliación"}
+                            onChange={(e) => setFormData({...formData, registrosConsiderados: e.target.value})}
+                            className="w-full px-3 py-2 rounded-lg text-sm text-slate-700 border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer"
+                          >
+                            <option value="Registros incluidos para conciliación">Registros incluidos para conciliación</option>
+                            <option value="Todos los registros cargados">Todos los registros cargados</option>
+                            <option value="Registros excluidos">Registros excluidos</option>
+                          </select>
+                        </div>
+
+                        {/* Extra fields based on subTipo */}
+                        {(formData.subTipo === 'Suma contra valor de control' || formData.subTipo === 'Comparación de totales entre fuentes') && (
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                              {formData.subTipo === 'Comparación de totales entre fuentes' ? 'Campo numérico de Fuente A' : 'Campo a sumar'} <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={formData.campoASumar || ""}
+                              onChange={(e) => setFormData({...formData, campoASumar: e.target.value})}
+                              className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoASumar)}`}
+                            >
+                              <option value="">Seleccionar campo...</option>
+                              {getAvailableFieldsList(formData.fuente).map(field => (
+                                <option key={field.id} value={field.id}>{field.id}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {(formData.subTipo === 'Suma contra valor de control' || formData.subTipo === 'Comparación de totales entre fuentes') && (
+                          <>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Condición de comparación <span className="text-rose-500">*</span></label>
+                              <select
+                                value={formData.condicionComparacion || "Igual a"}
+                                onChange={(e) => setFormData({...formData, condicionComparacion: e.target.value})}
+                                className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.condicionComparacion)}`}
+                              >
+                                <option value="Igual a">Igual a</option>
+                                <option value="Igual con tolerancia">Igual con tolerancia</option>
+                              </select>
+                            </div>
+                            {formData.condicionComparacion === 'Igual con tolerancia' && (
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tolerancia máxima permitida <span className="text-rose-500">*</span></label>
+                                <input 
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={formData.tolerancia || ""}
+                                  onChange={(e) => setFormData({...formData, tolerancia: e.target.value})}
+                                  className={`w-full px-3 py-2 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${getFieldErrorClass(!formData.tolerancia)}`}
+                                  placeholder="Ej. 1.50"
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {formData.subTipo === 'Suma contra valor de control' && (
+                          <>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Origen del valor de control <span className="text-rose-500">*</span></label>
+                              <select
+                                value={formData.origenValorControl || ""}
+                                onChange={(e) => setFormData({...formData, origenValorControl: e.target.value, campoControl: '', valorFijoControl: ''})}
+                                className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.origenValorControl)}`}
+                              >
+                                <option value="">Seleccionar origen...</option>
+                                <option value="Último valor de un campo">Último valor de un campo</option>
+                                <option value="Primer valor de un campo">Primer valor de un campo</option>
+                                <option value="Valor fijo ingresado">Valor fijo ingresado</option>
+                              </select>
+                            </div>
+                            
+                            {(formData.origenValorControl === 'Último valor de un campo' || formData.origenValorControl === 'Primer valor de un campo') && (
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo de control <span className="text-rose-500">*</span></label>
+                                <select
+                                  value={formData.campoControl || ""}
+                                  onChange={(e) => setFormData({...formData, campoControl: e.target.value})}
+                                  className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoControl)}`}
+                                >
+                                  <option value="">Seleccionar campo...</option>
+                                  {getAvailableFieldsList(formData.fuente).map(field => (
+                                    <option key={field.id} value={field.id}>{field.id}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            {formData.origenValorControl === 'Valor fijo ingresado' && (
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor fijo de control <span className="text-rose-500">*</span></label>
+                                <input 
+                                  type="number"
+                                  step="0.01"
+                                  value={formData.valorFijoControl || ""}
+                                  onChange={(e) => setFormData({...formData, valorFijoControl: e.target.value})}
+                                  className={`w-full px-3 py-2 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${getFieldErrorClass(!formData.valorFijoControl)}`}
+                                  placeholder="Ej. 10000.50"
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
+
+
+
+                        {formData.subTipo === 'Conteo de registros' && (
+                          <>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Condición de conteo <span className="text-rose-500">*</span></label>
+                              <select
+                                value={formData.condicionConteo || ""}
+                                onChange={(e) => setFormData({...formData, condicionConteo: e.target.value})}
+                                className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.condicionConteo)}`}
+                              >
+                                <option value="">Seleccionar condición...</option>
+                                <option value="Mayor o igual que">Mayor o igual que</option>
+                                <option value="Igual a">Igual a</option>
+                                <option value="Entre rango">Entre rango</option>
+                              </select>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                  {formData.condicionConteo === 'Entre rango' ? 'Cantidad mínima' : 'Cantidad esperada'} <span className="text-rose-500">*</span>
+                                </label>
+                                <input 
+                                  type="number"
+                                  min="0"
+                                  value={formData.cantidadMinimaRegistros || ""}
+                                  onChange={(e) => setFormData({...formData, cantidadMinimaRegistros: e.target.value})}
+                                  className={`w-full px-3 py-2 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${getFieldErrorClass(!formData.cantidadMinimaRegistros)}`}
+                                  placeholder="Ej. 1"
+                                />
+                              </div>
+                              {formData.condicionConteo === 'Entre rango' && (
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Cantidad máxima <span className="text-rose-500">*</span></label>
+                                  <input 
+                                    type="number"
+                                    min="0"
+                                    value={formData.cantidadMaximaRegistros || ""}
+                                    onChange={(e) => setFormData({...formData, cantidadMaximaRegistros: e.target.value})}
+                                    className={`w-full px-3 py-2 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${getFieldErrorClass(!formData.cantidadMaximaRegistros)}`}
+                                    placeholder="Ej. 100"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+
+                        {formData.subTipo === 'Comparación de totales entre fuentes' && (
+                          <>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Fuente B <span className="text-rose-500">*</span></label>
+                              <select
+                                value={formData.fuenteAdicional || ""}
+                                onChange={(e) => setFormData({...formData, fuenteAdicional: e.target.value, campoAdicional: ''})}
+                                className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.fuenteAdicional)}`}
+                              >
+                                <option value="">Seleccionar fuente...</option>
+                                {process.sources.filter(s => s !== formData.fuente).map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1.5">Registros considerados de Fuente B <span className="text-rose-500">*</span></label>
+                              <select
+                                value={formData.registrosConsideradosB || "Registros incluidos para conciliación"}
+                                onChange={(e) => setFormData({...formData, registrosConsideradosB: e.target.value})}
+                                className="w-full px-3 py-2 rounded-lg text-sm text-slate-700 border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer"
+                              >
+                                <option value="Registros incluidos para conciliación">Registros incluidos para conciliación</option>
+                                <option value="Todos los registros cargados">Todos los registros cargados</option>
+                                <option value="Registros excluidos">Registros excluidos</option>
+                              </select>
+                            </div>
+                            {formData.fuenteAdicional && (
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Campo numérico de Fuente B <span className="text-rose-500">*</span></label>
+                                <select
+                                  value={formData.campoAdicional || ""}
+                                  onChange={(e) => setFormData({...formData, campoAdicional: e.target.value})}
+                                  className={`w-full px-3 py-2 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none cursor-pointer ${getFieldErrorClass(!formData.campoAdicional)}`}
+                                >
+                                  <option value="">Seleccionar campo...</option>
+                                  {getAvailableFieldsList(formData.fuenteAdicional).map(field => (
+                                    <option key={field.id} value={field.id}>{field.id}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </>
+                        )}
+
+
+                        <div className="bg-white p-4 border border-slate-200 rounded-lg mt-4">
+                          <p className="text-sm text-slate-600">
+                            <span className="font-semibold text-slate-800">Resultado esperado: </span>
+                            {(() => {
+                              if (!formData.subTipo) return "Selecciona un tipo de control para ver el resultado esperado.";
+                              const regs = formData.registrosConsiderados === "Todos los registros cargados" ? "todos los registros" : formData.registrosConsiderados === "Registros excluidos" ? "los registros excluidos" : "los registros incluidos";
+                              
+                              if (formData.subTipo === 'Suma contra valor de control') {
+                                if (formData.campoASumar && formData.origenValorControl) {
+                                  const ref = formData.origenValorControl === 'Valor fijo ingresado' ? `el valor ${formData.valorFijoControl || 'fijo'}` :
+                                    `${formData.origenValorControl.toLowerCase()} ${formData.campoControl || ''}`;
+                                  return `Se validará que la suma del campo ${formData.campoASumar} de ${regs} en ${formData.fuente} sea ${formData.condicionComparacion?.toLowerCase() || 'igual a'} ${ref}${formData.condicionComparacion === 'Igual con tolerancia' && formData.tolerancia ? ` (±${formData.tolerancia})` : ''}.`;
+                                }
+                                return "Completa los parámetros para ver el resultado esperado.";
+                              }
+
+                              if (formData.subTipo === 'Conteo de registros') {
+                                if (formData.condicionConteo && formData.cantidadMinimaRegistros) {
+                                  if (formData.condicionConteo === 'Entre rango') {
+                                    return `Se validará que la cantidad de ${regs} en ${formData.fuente} esté entre ${formData.cantidadMinimaRegistros} y ${formData.cantidadMaximaRegistros || '...'}.`;
+                                  }
+                                  return `Se validará que la cantidad de ${regs} en ${formData.fuente} sea ${formData.condicionConteo?.toLowerCase()} ${formData.cantidadMinimaRegistros}.`;
+                                }
+                                return "Ingresa la condición y cantidad esperada.";
+                              }
+                              if (formData.subTipo === 'Comparación de totales entre fuentes') {
+                                if (formData.campoASumar && formData.fuenteAdicional && formData.campoAdicional) {
+                                  const regsB = formData.registrosConsideradosB === "Todos los registros cargados" ? "todos los registros" : formData.registrosConsideradosB === "Registros excluidos" ? "los registros excluidos" : "los registros incluidos";
+                                  return `Se comparará que la suma del campo ${formData.campoASumar} de ${regs} en ${formData.fuente} sea ${formData.condicionComparacion?.toLowerCase() || 'igual a'} a la suma del campo ${formData.campoAdicional} de ${regsB} en ${formData.fuenteAdicional}${formData.condicionComparacion === 'Igual con tolerancia' && formData.tolerancia ? ` (±${formData.tolerancia})` : ''}.`;
+                                }
+                                return "Completa los parámetros de campos y fuentes para ver el resultado esperado.";
+                              }
+                              return "Configura los parámetros.";
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+                  </>
+                )}
+
+                {(currentRuleType === 'Validación' || currentRuleType === 'Control de consistencia') && (
                   <>
                     <div className="w-full h-px bg-slate-100" />
 

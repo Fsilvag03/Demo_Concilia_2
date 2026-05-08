@@ -9,6 +9,7 @@ import { ResumenSection } from './ResumenSection';
 import { DatosProcesoSection } from './DatosProcesoSection';
 import { FuentesCamposSection } from './FuentesCamposSection';
 import { PreparacionDatosSection } from './PreparacionDatosSection';
+import { EstrategiaConciliacionSection } from './EstrategiaConciliacionSection';
 
 interface ProcessConfigModalProps {
   process: Process;
@@ -38,7 +39,7 @@ const sections: Section[] = [
   { id: 'datos', label: 'Datos del proceso', icon: Info, status: 'complete' },
   { id: 'fuentes', label: 'Fuentes y campos', icon: Database, status: 'incomplete' },
   { id: 'preparacion', label: 'Preparación de datos', icon: Wand2, status: 'not_started' },
-  { id: 'estrategia', label: 'Estrategia y reglas', icon: GitMerge, status: 'not_started' },
+  { id: 'estrategia', label: 'Estrategia de conciliación', icon: GitMerge, status: 'not_started' },
   { id: 'diferencias', label: 'Gestión de diferencias', icon: FileWarning, status: 'not_started' },
   { id: 'resultados', label: 'Resultados y salidas', icon: ArrowRightSquare, status: 'not_started' },
   { id: 'publicacion', label: 'Publicación', icon: UploadCloud, status: 'locked' }
@@ -130,7 +131,7 @@ export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process,
         {/* Body */}
         <div className="flex-1 flex overflow-hidden">
           {/* Inner Sidebar */}
-          <div className="w-64 border-r border-slate-200 bg-slate-50 flex flex-col py-6 overflow-y-auto hidden md:flex">
+          <div className="w-72 shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col py-6 overflow-y-auto hidden md:flex">
             <h3 className="px-6 mb-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Menú de Configuración
             </h3>
@@ -152,14 +153,16 @@ export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process,
                     {isActive && (
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r" />
                     )}
-                    <div className="flex items-center gap-3">
-                      <Icon size={18} className={`${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-primary'}`} />
-                      <span className="text-sm">{section.label}</span>
+                    <div className="flex items-center gap-3 w-full pl-1 min-w-0">
+                      <Icon size={18} className={`shrink-0 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-primary'}`} />
+                      <span className="text-[13px] text-left leading-tight pr-2 truncate">{section.label}</span>
                       {unsavedSections.has(section.id) && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Cambios sin guardar" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 ml-auto" title="Cambios sin guardar" />
                       )}
                     </div>
-                    {renderStatusIcon(section.status)}
+                    <div className="shrink-0 ml-auto">
+                      {renderStatusIcon(section.status)}
+                    </div>
                   </button>
                 );
               })}
@@ -183,7 +186,10 @@ export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process,
                 {activeSection === 'preparacion' && (
                   <PreparacionDatosSection process={process} onChange={markUnsaved} />
                 )}
-                {activeSection !== 'datos' && activeSection !== 'fuentes' && activeSection !== 'preparacion' && (
+                {activeSection === 'estrategia' && (
+                  <EstrategiaConciliacionSection process={process} onChange={markUnsaved} />
+                )}
+                {activeSection !== 'datos' && activeSection !== 'fuentes' && activeSection !== 'preparacion' && activeSection !== 'estrategia' && (
                   <div className="max-w-4xl mx-auto">
                     {/* Section Header */}
                     <div className="mb-8">

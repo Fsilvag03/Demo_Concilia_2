@@ -135,7 +135,49 @@ export function FuentesCamposSection({
   onChange,
 }: FuentesCamposSectionProps) {
   const [view, setView] = useState<"list" | "edit">("list");
-  const [fuentes, setFuentes] = useState<FuenteConfig[]>(mockFuentes);
+  const [fuentes, setFuentes] = useState<FuenteConfig[]>(() => {
+    return process.sources.map((source, index) => {
+      // Create some default mock fields based on the source list length.
+      return {
+        id: `f${index + 1}`,
+        nombre: source,
+        descripcion: `Fuente configurada para ${source}.`,
+        tipoOrigen: index === 0 ? "Excel" : "CSV",
+        participacion: "Obligatoria",
+        modoCarga: index === 0 ? "Manual" : "Ruta",
+        estado: index === 0 ? "completo" : "incompleto",
+        campos: [
+          {
+            id: `c${index * 10 + 1}`,
+            nombreOrigen: "FECHA",
+            campoEstandar: "fecha_transaccion",
+            tipoDato: "Fecha",
+            formato: "DD/MM/YYYY",
+            usoFuncional: "Contexto",
+            obligatorio: true,
+          },
+          {
+            id: `c${index * 10 + 2}`,
+            nombreOrigen: "MONTO",
+            campoEstandar: "monto",
+            tipoDato: "Numérico",
+            formato: "2 decimales",
+            usoFuncional: "Validación",
+            obligatorio: true,
+          },
+          {
+            id: `c${index * 10 + 3}`,
+            nombreOrigen: "REF",
+            campoEstandar: "referencia_1",
+            tipoDato: "Texto",
+            formato: "",
+            usoFuncional: "Identidad",
+            obligatorio: true,
+          },
+        ]
+      }
+    });
+  });
   const [selectedFuenteId, setSelectedFuenteId] = useState<string | null>(null);
 
   const handleEdit = (id: string) => {
