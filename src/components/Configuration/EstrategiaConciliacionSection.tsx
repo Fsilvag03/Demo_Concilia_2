@@ -13,7 +13,8 @@ import {
   Power,
   CheckCircle2,
   AlertTriangle,
-  ArrowLeftRight
+  ArrowLeftRight,
+  GitBranch
 } from 'lucide-react';
 import type { Process } from './ProcessCard';
 import { PasoCruceModal } from './PasoCruceModal';
@@ -316,19 +317,25 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
 
               <div className="flex flex-col sm:items-end gap-2 text-[13px] sm:pl-4 sm:border-l sm:border-slate-100 shrink-0 min-w-fit">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500 font-medium whitespace-nowrap">Fuente rectora:</span>
+                  <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-1.5">
+                    <GitBranch size={13} className="text-slate-400" />
+                    Fuente Rectora:
+                  </span>
                   {process.sources.length === 0 ? (
-                    <span className="text-slate-400 italic">Configura al menos una...</span>
+                    <span className="text-[13px] text-slate-400 italic">Configura al menos una...</span>
                   ) : (
                     <select 
                       value={localRectorSource}
                       onChange={(e) => {
-                        setLocalRectorSource(e.target.value);
+                        const newVal = e.target.value;
+                        setLocalRectorSource(newVal);
+                        process.rectorSource = newVal; // Sync back to process object
                         onChange();
                       }}
-                      className={`text-[12.5px] font-semibold bg-slate-50 border rounded-full px-3 py-1 focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-colors border-slate-200 text-slate-700 hover:bg-white`}
+                      className="text-[13px] font-bold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm text-slate-800 appearance-none cursor-pointer"
+                      style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1em 1em' }}
                     >
-                      <option value="">Seleccionar...</option>
+                      <option value="" disabled>Seleccionar...</option>
                       {process.sources.map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -338,7 +345,7 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
                 {localRectorSource && !process.sources.includes(localRectorSource) && (
                   <span className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
                     <AlertTriangle size={12} />
-                    Selecciona una nueva fuente.
+                    La fuente seleccionada ya no existe.
                   </span>
                 )}
               </div>

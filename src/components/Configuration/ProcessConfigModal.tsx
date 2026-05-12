@@ -10,6 +10,9 @@ import { DatosProcesoSection } from './DatosProcesoSection';
 import { FuentesCamposSection } from './FuentesCamposSection';
 import { PreparacionDatosSection } from './PreparacionDatosSection';
 import { EstrategiaConciliacionSection } from './EstrategiaConciliacionSection';
+import { ConfiguracionDiferenciasSection } from './ConfiguracionDiferenciasSection';
+import { ResultadosSalidasSection } from './ResultadosSalidasSection';
+import { PublicacionSection } from './PublicacionSection';
 
 interface ProcessConfigModalProps {
   process: Process;
@@ -40,9 +43,9 @@ const sections: Section[] = [
   { id: 'fuentes', label: 'Fuentes y campos', icon: Database, status: 'incomplete' },
   { id: 'preparacion', label: 'Preparación de datos', icon: Wand2, status: 'not_started' },
   { id: 'estrategia', label: 'Estrategia de conciliación', icon: GitMerge, status: 'not_started' },
-  { id: 'diferencias', label: 'Gestión de diferencias', icon: FileWarning, status: 'not_started' },
+  { id: 'diferencias', label: 'Diferencias', icon: FileWarning, status: 'not_started' },
   { id: 'resultados', label: 'Resultados y salidas', icon: ArrowRightSquare, status: 'not_started' },
-  { id: 'publicacion', label: 'Publicación', icon: UploadCloud, status: 'locked' }
+  { id: 'publicacion', label: 'Publicación', icon: UploadCloud, status: 'not_started' }
 ];
 
 export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process, onClose }) => {
@@ -189,7 +192,16 @@ export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process,
                 {activeSection === 'estrategia' && (
                   <EstrategiaConciliacionSection process={process} onChange={markUnsaved} />
                 )}
-                {activeSection !== 'datos' && activeSection !== 'fuentes' && activeSection !== 'preparacion' && activeSection !== 'estrategia' && (
+                {activeSection === 'diferencias' && (
+                  <ConfiguracionDiferenciasSection process={process} onChange={markUnsaved} onNavigate={setActiveSection} />
+                )}
+                {activeSection === 'resultados' && (
+                  <ResultadosSalidasSection process={process} onChange={markUnsaved} />
+                )}
+                {activeSection === 'publicacion' && (
+                  <PublicacionSection process={process} onNavigate={setActiveSection} />
+                )}
+                {activeSection !== 'datos' && activeSection !== 'fuentes' && activeSection !== 'preparacion' && activeSection !== 'estrategia' && activeSection !== 'diferencias' && activeSection !== 'resultados' && activeSection !== 'publicacion' && (
                   <div className="max-w-4xl mx-auto">
                     {/* Section Header */}
                     <div className="mb-8">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   RefreshCw, Plus, Search, Filter, 
   Settings2, Database, Zap, History,
@@ -7,6 +7,7 @@ import {
 import { motion } from 'motion/react';
 
 import { ViewType } from '../../App';
+import { NuevaEjecucion } from './NuevaEjecucion';
 
 interface ConciliacionesProps {
   onNavigate?: (view: ViewType) => void;
@@ -20,6 +21,9 @@ const procesos = [
 ];
 
 export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeIngesta, setActiveIngesta] = useState<{procesoId: string, fecha: string} | null>(null);
+
   const subsecciones = [
     { title: 'Procesos configurados', icon: Settings2, desc: 'Define y gestiona el flujo de trabajo' },
     { title: 'Ejecuciones del día', icon: PlayCircle, desc: 'Monitorea el avance tiempo real' },
@@ -27,6 +31,18 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
     { title: 'Preparación de datos', icon: Zap, desc: 'Reglas de limpieza y normalización', onClick: () => onNavigate?.('configuracion') },
     { title: 'Historial', icon: History, desc: 'Consulta corridas anteriores' },
   ];
+
+  if (activeIngesta) {
+    return (
+      <div className="flex-1 w-full h-full flex flex-col relative animate-in fade-in duration-500">
+        <NuevaEjecucion 
+          procesoParams={activeIngesta} 
+          onClose={() => setActiveIngesta(null)} 
+          isOpen={true} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-8 animate-in fade-in duration-700">
@@ -40,9 +56,9 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
             <span>Aquí se administran las conciliaciones por proceso, fecha, fuente y estado.</span>
           </div>
         </div>
-        <button className="px-6 py-3 bg-primary text-white text-[14.5px] font-bold rounded-2xl shadow-xl shadow-primary/25 hover:bg-primary/90 hover:-translate-y-0.5 flex items-center gap-2.5 transition-all">
+        <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 bg-primary text-white text-[14.5px] font-bold rounded-2xl shadow-xl shadow-primary/25 hover:bg-primary/90 hover:-translate-y-0.5 flex items-center gap-2.5 transition-all">
           <Plus size={20} />
-          Nuevo Proceso
+          Nueva conciliación
         </button>
       </header>
 
@@ -152,6 +168,15 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
           </p>
         </div>
       </section>
+
+      <NuevaEjecucion 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onStartIngesta={(procesoId, fecha) => {
+          setIsModalOpen(false);
+          setActiveIngesta({procesoId, fecha});
+        }}
+      />
     </div>
   );
 }

@@ -128,14 +128,9 @@ export function DatosProcesoSection({
                 onChange={onChange}
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
               >
-                <option value="Día caído">Día caído</option>
                 <option value="Día actual">Día actual</option>
-                <option value="Acumulado fin de semana / feriado">
-                  Acumulado fin de fin de semana / feriado
-                </option>
-                <option value="Rango definido por el usuario">
-                  Rango definido por el usuario
-                </option>
+                <option value="Día anterior">Día anterior</option>
+                <option value="Fecha definida por el usuario">Fecha definida por el usuario</option>
               </select>
             </div>
             <div>
