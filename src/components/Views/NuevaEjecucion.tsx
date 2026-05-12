@@ -41,12 +41,12 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
   const currentProceso = procesos.find(p => p.id === procesoId) || procesos[0];
 
   const initialFuentes: FuenteData[] = useMemo(() => procesoId === '1' ? [
-    { id: 'f1', name: 'Core Bancario', type: 'TXT', required: true, estado: isEmbedded ? 'error' : 'pendiente', archivo: isEmbedded ? 'core_bancario_error.txt' : undefined, mensaje: isEmbedded ? 'No se pudo identificar la columna "fecha_trx". La fuente no se pudo validar.' : undefined },
-    { id: 'f2', name: 'Switch Transaccional', type: 'CSV', required: true, estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'switch_trx_0512.csv' : undefined, registrosLeidos: isEmbedded ? 4518 : undefined, mensaje: isEmbedded ? '15 registros ignorados por formato de fecha inválido o vacío.' : undefined },
+    { id: 'f1', name: 'Core Bancario', type: 'TXT', required: true, estado: isEmbedded ? 'error' : 'pendiente', archivo: isEmbedded ? 'core_bancario_error.txt' : undefined, mensaje: isEmbedded ? 'No se encontró el campo configurado "Creditos".' : undefined },
+    { id: 'f2', name: 'Switch Transaccional', type: 'CSV', required: true, estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'switch_trx_0512.csv' : undefined, registrosLeidos: isEmbedded ? 4518 : undefined, mensaje: isEmbedded ? 'Se encontraron los campos configurados para la fuente, pero faltan algunos campos no críticos mapeados.' : undefined },
     { id: 'f3', name: 'Reversos y anulaciones', type: 'Excel', required: false, sheetExpected: 'Reversos_Hoy', estado: isEmbedded ? 'cargada' : 'pendiente', archivo: isEmbedded ? 'reversos_final.xlsx' : undefined, hojaLeida: isEmbedded ? 'Reversos_Hoy' : undefined, registrosLeidos: isEmbedded ? 342 : undefined }
   ] : [
     { id: 'f1', name: 'Extracto TC', type: 'Excel', required: true, sheetExpected: 'Extracto', estado: isEmbedded ? 'cargada' : 'pendiente', archivo: isEmbedded ? 'extracto_tc_0512.xlsx' : undefined, hojaLeida: 'Extracto', registrosLeidos: isEmbedded ? 1250 : undefined },
-    { id: 'f2', name: 'Adquirencia', type: 'CSV', required: true, estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'adquirencia_0512.csv' : undefined, registrosLeidos: isEmbedded ? 1245 : undefined, mensaje: isEmbedded ? 'Se omitieron 5 registros con formato inválido' : undefined },
+    { id: 'f2', name: 'Adquirencia', type: 'CSV', required: true, estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'adquirencia_0512.csv' : undefined, registrosLeidos: isEmbedded ? 1245 : undefined, mensaje: isEmbedded ? 'Faltan campos no críticos en la estructura.' : undefined },
   ], [procesoId, isEmbedded]);
 
   const [fuentes, setFuentes] = useState<FuenteData[]>(initialFuentes);
@@ -68,9 +68,19 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
         if (result === 'ok') {
           return { ...f, estado: 'cargada', archivo: `archivo_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: f.sheetExpected, registrosLeidos: Math.floor(Math.random() * 5000) + 1000, mensaje: undefined };
         } else if (result === 'warn') {
-          return { ...f, estado: 'cargada_advertencias', archivo: `archivo_warn_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: f.sheetExpected, registrosLeidos: Math.floor(Math.random() * 5000) + 1000, mensaje: 'Se omitieron 5 registros con formato de fecha inválido.' };
+          return { ...f, estado: 'cargada_advertencias', archivo: `archivo_warn_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: f.sheetExpected, registrosLeidos: Math.floor(Math.random() * 5000) + 1000, mensaje: `Se encontraron los campos configurados para la fuente, pero falta el campo no crítico "Campo_Opcional".` };
         } else if (result === 'error') {
-          return { ...f, estado: 'error', archivo: `error_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: undefined, registrosLeidos: 0, mensaje: f.type === 'Excel' ? `No se encontró la hoja "${f.sheetExpected}".` : 'No se pudo identificar la columna de fecha.' };
+          const rand = Math.random();
+          let msj = 'El archivo no pudo procesarse. Verifica que no esté dañado o protegido.';
+          if (rand > 0.7) {
+            msj = f.type === 'Excel' ? `No se encontró la hoja configurada "${f.sheetExpected}".` : `El archivo debe tener formato ${f.type}.`;
+          } else if (rand > 0.4) {
+            msj = 'No se encontraron registros para cargar.';
+          } else if (rand > 0.1) {
+            msj = 'No se encontró el campo configurado "Crédito".';
+          }
+          
+          return { ...f, estado: 'error', archivo: `error_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: undefined, registrosLeidos: 0, mensaje: msj };
         } else if (result === 'pendiente') {
           return { ...f, estado: 'pendiente', archivo: undefined, hojaLeida: undefined, registrosLeidos: undefined, mensaje: undefined };
         }
@@ -310,53 +320,52 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
 
   if (isEmbedded) {
     return (
-      <div className="flex-1 flex flex-col bg-slate-50 relative w-full h-full overflow-hidden">
-        {/* Immersive Header (Dark Blue / Emerald accents) */}
-        <div className="bg-slate-900 px-8 py-8 md:px-12 shrink-0 border-b-4 border-emerald-500 shadow-lg relative overflow-hidden">
+      <div className="flex-1 flex flex-col bg-zinc-50/50 relative w-full h-full overflow-hidden">
+        {/* Sober Professional Header */}
+        <div className="bg-primary px-8 py-8 md:px-12 shrink-0 border-b-4 border-secondary relative overflow-hidden">
           {/* Subtle background decoration */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-          
-          <div className="w-full flex flex-col">
-            {/* Breadcrumb or Back */}
-            <div 
-              className="flex items-center gap-2 text-[13px] text-slate-400 mb-6 font-medium cursor-pointer w-fit hover:text-emerald-400 transition-colors"
-              onClick={onClose}
-            >
-              <ArrowLeft size={16} />
-              <span>Volver a Conciliaciones</span>
-            </div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
 
+          <button 
+            onClick={onClose}
+            className="absolute top-6 right-8 text-slate-300 hover:text-white transition-colors z-20 bg-primary-dark/50 hover:bg-primary-dark p-2.5 rounded-full border border-primary-dark shadow-sm"
+            title="Cerrar y volver a Conciliaciones"
+          >
+            <X size={20} />
+          </button>
+          
+          <div className="w-full flex flex-col pt-2">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 z-10 relative">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="px-2.5 py-1 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold tracking-widest uppercase">
-                    Fase 1: Ingesta de Datos
+                  <div className="px-3 py-1 rounded border border-primary-dark text-slate-300 text-[11px] font-bold tracking-widest uppercase bg-primary-dark/50 shadow-sm">
+                    Fase 1: Ingesta
                   </div>
                   {estadoGeneralIngesta.allowed && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500 text-white text-[11px] font-bold tracking-widest uppercase shadow-sm">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded border border-secondary/30 bg-secondary/10 text-secondary text-[11px] font-bold tracking-widest uppercase shadow-sm">
                       <CheckCircle2 size={12} />
                       Listo para preparación
                     </div>
                   )}
                 </div>
                 {/* Título: Proceso + Identificador */}
-                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                <h1 className="text-3xl font-bold text-white tracking-tight">
                   {currentProceso.name} 
-                  <span className="text-slate-500 font-medium ml-3 text-2xl">#{processIdString}</span>
+                  <span className="text-slate-400 font-normal ml-3 text-2xl tracking-normal">#{processIdString}</span>
                 </h1>
               </div>
 
               {/* Contenedor Versión y Fecha Operativa */}
-              <div className="flex items-center gap-8 bg-slate-800/80 backdrop-blur-sm px-6 py-4 rounded-2xl border border-slate-700/50 shadow-inner">
+              <div className="flex items-center gap-8 px-6 py-4 rounded-xl border border-primary-dark bg-primary-dark/50 shadow-sm backdrop-blur-sm">
                 <div className="flex flex-col">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Versión</span>
-                  <span className="text-[14px] font-bold text-white">{currentProceso.version}</span>
+                  <span className="text-[14px] font-semibold text-white">{currentProceso.version}</span>
                 </div>
                 <div className="w-px h-10 bg-slate-700"></div>
                 <div className="flex flex-col">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha Operativa</span>
-                  <div className="flex items-center gap-2 text-[14px] font-bold text-white">
-                    <Calendar size={16} className="text-emerald-400" />
+                  <div className="flex items-center gap-2 text-[14px] font-semibold text-white">
+                    <Calendar size={16} className="text-secondary" />
                     {fechaOperativa}
                   </div>
                 </div>
@@ -366,16 +375,15 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
         </div>
 
         {/* Body Ingesta flex-1 w-full */}
-        <div className="flex-1 overflow-y-auto w-full px-8 py-8 md:px-12 bg-slate-50 relative">
-          <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,transparent,black)] pointer-events-none opacity-20"></div>
+        <div className="flex-1 overflow-y-auto w-full px-8 py-8 md:px-12 relative">
           
           <div className="w-full relative z-10">
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-black text-slate-800">Fuentes de información requeridas</h2>
-                <p className="text-[15px] text-slate-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
+                <h2 className="text-xl font-bold text-zinc-900">Fuentes de información requeridas</h2>
+                <p className="text-[15px] text-zinc-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
               </div>
-              <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'} shadow-sm transition-colors`}>
+              <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-600'} shadow-sm transition-colors`}>
                 {estadoGeneralIngesta.icon}
                 <span className="text-[14px] font-bold tracking-wide">{estadoGeneralIngesta.status}</span>
               </div>
@@ -383,32 +391,32 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {fuentes.map((fuente) => (
-                <div key={fuente.id} className={`bg-white border-2 text-left rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col h-full group ${fuente.estado === 'cargada' ? 'border-emerald-500/30 ring-4 ring-emerald-500/5' : 'border-slate-200 hover:border-slate-300'}`}>
+                <div key={fuente.id} className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative flex flex-col h-full group ${fuente.estado === 'cargada' ? 'border-emerald-200' : 'border-zinc-200'}`}>
                   
                   {/* Top info */}
                   <div className="flex justify-between items-start mb-5">
                     <div className="flex items-center gap-3.5">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${fuente.required ? (fuente.type === 'Excel' ? 'bg-emerald-900 text-emerald-400' : fuente.type === 'CSV' ? 'bg-sky-900 text-sky-400' : 'bg-indigo-900 text-indigo-400') : (fuente.type === 'Excel' ? 'bg-emerald-50 text-emerald-500' : fuente.type === 'CSV' ? 'bg-sky-50 text-sky-500' : 'bg-indigo-50 text-indigo-500')}`}>
-                        {fuente.type === 'Excel' ? <FileSpreadsheet size={24} /> : fuente.type === 'CSV' ? <Database size={24} /> : <FileText size={24} />}
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-zinc-200 bg-zinc-50 text-zinc-600">
+                        {fuente.type === 'Excel' ? <FileSpreadsheet size={20} /> : fuente.type === 'CSV' ? <Database size={20} /> : <FileText size={20} />}
                       </div>
                       <div>
-                        <h4 className="text-[16px] font-bold text-slate-800 leading-tight mb-1">{fuente.name}</h4>
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md ${fuente.required ? 'text-slate-700 bg-slate-100 border border-slate-200' : 'text-slate-500 bg-slate-50 border border-slate-100'}`}>
+                        <h4 className="text-[15px] font-bold text-zinc-800 leading-tight mb-1">{fuente.name}</h4>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${fuente.required ? 'text-zinc-700 bg-zinc-100 border border-zinc-200' : 'text-zinc-500 bg-white border border-zinc-200 border-dashed'}`}>
                           {fuente.required ? 'Requerida' : 'Opcional'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-[13px] text-slate-600 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <div className="text-[13px] text-zinc-600 mb-5 border-t border-zinc-100 pt-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">Formato:</span>
-                      <strong className="text-slate-800 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-100">{fuente.type}</strong>
+                      <span className="font-medium text-zinc-500">Formato:</span>
+                      <strong className="text-zinc-800 font-medium">{fuente.type}</strong>
                     </div>
                     {fuente.sheetExpected && (
                       <div className="flex justify-between items-center">
-                        <span className="font-medium">Hoja:</span>
-                        <strong className="text-slate-800 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-100 max-w-[120px] truncate" title={fuente.sheetExpected}>{fuente.sheetExpected}</strong>
+                        <span className="font-medium text-zinc-500">Hoja:</span>
+                        <strong className="text-zinc-800 font-medium max-w-[120px] truncate" title={fuente.sheetExpected}>{fuente.sheetExpected}</strong>
                       </div>
                     )}
                   </div>
@@ -416,42 +424,40 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                   {/* Upload Actions / Status */}
                   <div className="mt-auto pt-2">
                     {fuente.estado === 'pendiente' ? (
-                      <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 bg-slate-50/50 flex flex-col items-center justify-center text-center hover:bg-emerald-50/50 hover:border-emerald-400 transition-all duration-300 cursor-pointer relative overflow-hidden group/drop">
-                        <UploadCloud size={32} className="text-slate-400 group-hover/drop:text-emerald-500 mb-3 transition-colors duration-300 group-hover/drop:-translate-y-1" />
-                        <span className="text-[14px] font-bold text-slate-700 group-hover/drop:text-emerald-700">Seleccionar archivo</span>
-                        <span className="text-[12px] text-slate-500 mt-1">o arrastra aquí</span>
+                      <div className="border border-dashed border-zinc-300 rounded-xl p-5 bg-zinc-50 flex flex-col items-center justify-center text-center hover:bg-zinc-100 hover:border-zinc-400 transition-all duration-300 cursor-pointer relative overflow-hidden group/drop">
+                        <UploadCloud size={28} className="text-zinc-400 group-hover/drop:text-zinc-600 mb-2 transition-colors duration-300" />
+                        <span className="text-[13px] font-bold text-zinc-700 group-hover/drop:text-zinc-900">Seleccionar archivo</span>
                         
                         {/* Hidden dummy buttons for prototype simulation */}
                         <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2 opacity-0 group-hover/drop:opacity-100 transition-all duration-300">
-                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Simular Carga</span>
                            <div className="flex gap-2">
-                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'ok') }} className="px-3 py-2 text-[11px] font-black bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg transition-colors">OK</button>
-                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'warn') }} className="px-3 py-2 text-[11px] font-black bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg transition-colors">WARN</button>
-                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'error') }} className="px-3 py-2 text-[11px] font-black bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-lg transition-colors">ERR</button>
+                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'ok') }} className="px-3 py-1.5 text-[11px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded transition-colors">OK</button>
+                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'warn') }} className="px-3 py-1.5 text-[11px] font-bold border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded transition-colors">WARN</button>
+                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'error') }} className="px-3 py-1.5 text-[11px] font-bold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded transition-colors">ERR</button>
                            </div>
                         </div>
                       </div>
                     ) : (
-                      <div className={`border-2 rounded-2xl p-4 transition-all duration-300 ${fuente.estado === 'cargada' ? 'bg-emerald-50/50 border-emerald-200' : fuente.estado === 'cargada_advertencias' ? 'bg-amber-50/50 border-amber-200' : 'bg-rose-50/50 border-rose-200'}`}>
+                      <div className={`border rounded-xl p-4 transition-all duration-300 ${fuente.estado === 'cargada' ? 'bg-emerald-50/30 border-emerald-200' : fuente.estado === 'cargada_advertencias' ? 'bg-amber-50/30 border-amber-200' : 'bg-rose-50/30 border-rose-200'}`}>
                         <div className="flex items-start gap-3">
-                          <div className={`shrink-0 mt-0.5 p-1 rounded-full bg-white shadow-sm ${fuente.estado === 'cargada' ? 'text-emerald-500' : fuente.estado === 'cargada_advertencias' ? 'text-amber-500' : 'text-rose-500'}`}>
+                          <div className={`shrink-0 mt-0.5 p-1 rounded-full bg-white shadow-sm border ${fuente.estado === 'cargada' ? 'text-emerald-600 border-emerald-100' : fuente.estado === 'cargada_advertencias' ? 'text-amber-600 border-amber-100' : 'text-rose-600 border-rose-100'}`}>
                             {fuente.estado === 'cargada' ? <CheckCircle2 size={16} /> : fuente.estado === 'cargada_advertencias' ? <AlertTriangle size={16} /> : <AlertCircle size={16} />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className="block text-[13px] font-bold text-slate-800 truncate" title={fuente.archivo}>{fuente.archivo}</span>
-                            <span className="block text-[12px] font-medium text-slate-500 mt-1">
-                              {fuente.estado === 'error' ? 'Validación fallida' : <span className="text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">{fuente.registrosLeidos?.toLocaleString() || 0} registros leídos</span>}
+                            <span className="block text-[13px] font-medium text-zinc-900 truncate" title={fuente.archivo}>{fuente.archivo}</span>
+                            <span className="block text-[12px] text-zinc-500 mt-1">
+                              {fuente.estado === 'error' ? 'Validación fallida' : <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{fuente.registrosLeidos?.toLocaleString() || 0} registros leídos</span>}
                             </span>
                             
                             {fuente.mensaje && (
-                              <div className={`mt-3 text-[12px] font-semibold leading-relaxed p-2.5 rounded-xl border ${fuente.estado === 'error' ? 'bg-rose-100/50 text-rose-800 border-rose-200' : 'bg-amber-100/50 text-amber-800 border-amber-200'}`}>
+                              <div className={`mt-3 text-[12px] leading-relaxed p-2.5 rounded-lg border ${fuente.estado === 'error' ? 'bg-rose-50 text-rose-800 border-rose-100' : 'bg-amber-50 text-amber-800 border-amber-100'}`}>
                                 {fuente.mensaje}
                               </div>
                             )}
                           </div>
                           <button 
                             onClick={() => handleSimularCarga(fuente.id, 'pendiente')}
-                            className="text-slate-400 hover:text-slate-800 transition-colors shrink-0 p-1.5 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow"
+                            className="text-zinc-400 hover:text-zinc-800 transition-colors shrink-0 p-1.5 bg-white rounded flex items-center justify-center border border-zinc-200 shadow-sm"
                             title="Reemplazar archivo"
                           >
                             <RefreshCw size={14} />
@@ -466,11 +472,11 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
           </div>
         </div>
 
-        {/* Immersive Footer Actions - Full Width */}
-        <div className="bg-slate-900 px-8 py-5 md:px-12 shrink-0 relative flex items-center justify-between border-t border-slate-800">
+        {/* Refined Footer Actions - Full Width */}
+        <div className="bg-primary px-8 py-5 md:px-12 shrink-0 relative flex items-center justify-between border-t border-primary-dark">
           <button 
             onClick={onClose}
-            className="px-6 py-3 text-[14px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors ring-1 ring-slate-800"
+            className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white hover:bg-primary-dark rounded-lg transition-colors border border-transparent hover:border-slate-700"
           >
             Guardar y continuar luego
           </button>
@@ -480,14 +486,14 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
             onClick={() => {
               onClose();
             }}
-            className={`px-10 py-4 text-[15px] font-black rounded-2xl shadow-xl transition-all duration-300 flex items-center gap-3 ${
+            className={`px-8 py-3 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
               estadoGeneralIngesta.allowed 
-                ? 'text-slate-900 bg-emerald-400 hover:bg-emerald-300 hover:-translate-y-1 hover:shadow-emerald-500/20 shadow-emerald-500/10 cursor-pointer' 
-                : 'text-slate-500 bg-slate-800 shadow-none cursor-not-allowed'
+                ? 'text-primary-dark bg-secondary hover:bg-secondary-dark shadow-sm cursor-pointer' 
+                : 'text-slate-500 bg-primary-dark shadow-none cursor-not-allowed border border-slate-700'
             }`}
           >
             Iniciar Preparación
-            <ArrowRight size={20} className={estadoGeneralIngesta.allowed ? "text-slate-800" : "text-slate-600"} />
+            <ArrowRight size={18} className={estadoGeneralIngesta.allowed ? "text-primary-dark" : "text-slate-600"} />
           </button>
         </div>
       </div>

@@ -34,7 +34,7 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
 
   if (activeIngesta) {
     return (
-      <div className="flex-1 w-full h-full flex flex-col relative animate-in fade-in duration-500">
+      <div className="flex-1 w-full h-full flex flex-col relative bg-white animate-in fade-in duration-500 overflow-hidden">
         <NuevaEjecucion 
           procesoParams={activeIngesta} 
           onClose={() => setActiveIngesta(null)} 
