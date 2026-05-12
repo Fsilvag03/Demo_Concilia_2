@@ -41,12 +41,12 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
   const currentProceso = procesos.find(p => p.id === procesoId) || procesos[0];
 
   const initialFuentes: FuenteData[] = useMemo(() => procesoId === '1' ? [
-    { id: 'f1', name: 'Core Bancario', type: 'TXT', required: true, estado: isEmbedded ? 'cargada' : 'pendiente', archivo: isEmbedded ? 'core_bancario_0512.txt' : undefined, registrosLeidos: isEmbedded ? 4521 : undefined },
-    { id: 'f2', name: 'Switch Transaccional', type: 'CSV', required: true, estado: isEmbedded ? 'cargada' : 'pendiente', archivo: isEmbedded ? 'switch_trx_0512.csv' : undefined, registrosLeidos: isEmbedded ? 4518 : undefined },
-    { id: 'f3', name: 'Reversos y anulaciones', type: 'Excel', required: false, sheetExpected: 'Reversos_Hoy', estado: 'pendiente' }
+    { id: 'f1', name: 'Core Bancario', type: 'TXT', required: true, estado: isEmbedded ? 'error' : 'pendiente', archivo: isEmbedded ? 'core_bancario_error.txt' : undefined, mensaje: isEmbedded ? 'No se pudo identificar la columna "fecha_trx". La fuente no se pudo validar.' : undefined },
+    { id: 'f2', name: 'Switch Transaccional', type: 'CSV', required: true, estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'switch_trx_0512.csv' : undefined, registrosLeidos: isEmbedded ? 4518 : undefined, mensaje: isEmbedded ? '15 registros ignorados por formato de fecha inválido o vacío.' : undefined },
+    { id: 'f3', name: 'Reversos y anulaciones', type: 'Excel', required: false, sheetExpected: 'Reversos_Hoy', estado: isEmbedded ? 'cargada' : 'pendiente', archivo: isEmbedded ? 'reversos_final.xlsx' : undefined, hojaLeida: isEmbedded ? 'Reversos_Hoy' : undefined, registrosLeidos: isEmbedded ? 342 : undefined }
   ] : [
     { id: 'f1', name: 'Extracto TC', type: 'Excel', required: true, sheetExpected: 'Extracto', estado: isEmbedded ? 'cargada' : 'pendiente', archivo: isEmbedded ? 'extracto_tc_0512.xlsx' : undefined, hojaLeida: 'Extracto', registrosLeidos: isEmbedded ? 1250 : undefined },
-    { id: 'f2', name: 'Adquirencia', type: 'Excel', required: true, sheetExpected: 'Mastercard', estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'adquirencia_0512.xlsx' : undefined, hojaLeida: 'Mastercard', registrosLeidos: isEmbedded ? 1245 : undefined, mensaje: isEmbedded ? 'Se omitieron 5 registros con formato inválido' : undefined },
+    { id: 'f2', name: 'Adquirencia', type: 'CSV', required: true, estado: isEmbedded ? 'cargada_advertencias' : 'pendiente', archivo: isEmbedded ? 'adquirencia_0512.csv' : undefined, registrosLeidos: isEmbedded ? 1245 : undefined, mensaje: isEmbedded ? 'Se omitieron 5 registros con formato inválido' : undefined },
   ], [procesoId, isEmbedded]);
 
   const [fuentes, setFuentes] = useState<FuenteData[]>(initialFuentes);
@@ -62,15 +62,17 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
     onStartIngesta?.(procesoId, fechaOperativa);
   };
 
-  const handleSimularCarga = (id: string, result: 'ok' | 'warn' | 'error') => {
+  const handleSimularCarga = (id: string, result: 'ok' | 'warn' | 'error' | 'pendiente') => {
     setFuentes(prev => prev.map(f => {
       if (f.id === id) {
         if (result === 'ok') {
           return { ...f, estado: 'cargada', archivo: `archivo_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: f.sheetExpected, registrosLeidos: Math.floor(Math.random() * 5000) + 1000, mensaje: undefined };
         } else if (result === 'warn') {
-          return { ...f, estado: 'cargada_advertencias', archivo: `archivo_warn_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: f.sheetExpected, registrosLeidos: Math.floor(Math.random() * 5000) + 1000, mensaje: '5 registros omitidos por formato de fecha inválido.' };
-        } else {
-          return { ...f, estado: 'error', archivo: `error_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: undefined, registrosLeidos: 0, mensaje: f.type === 'Excel' ? `No se encontró la hoja "${f.sheetExpected}".` : 'No se pudo identificar los campos esperados.' };
+          return { ...f, estado: 'cargada_advertencias', archivo: `archivo_warn_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: f.sheetExpected, registrosLeidos: Math.floor(Math.random() * 5000) + 1000, mensaje: 'Se omitieron 5 registros con formato de fecha inválido.' };
+        } else if (result === 'error') {
+          return { ...f, estado: 'error', archivo: `error_${f.name.toLowerCase().replace(/ /g, '_')}.${f.type.toLowerCase()}`, hojaLeida: undefined, registrosLeidos: 0, mensaje: f.type === 'Excel' ? `No se encontró la hoja "${f.sheetExpected}".` : 'No se pudo identificar la columna de fecha.' };
+        } else if (result === 'pendiente') {
+          return { ...f, estado: 'pendiente', archivo: undefined, hojaLeida: undefined, registrosLeidos: undefined, mensaje: undefined };
         }
       }
       return f;
@@ -121,80 +123,34 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                        <span className="text-slate-800">Proceso Activo</span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between w-full mb-6 relative">
+                  <div className="flex items-center justify-between w-full mb-2 relative">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm shadow-primary/5">
-                        {isEmbedded ? <Database size={20} className="fill-primary/20" /> : <Play size={20} className="fill-primary/20" />}
+                        <Play size={20} className="fill-primary/20" />
                       </div>
                       <div>
                         <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-                          {isEmbedded ? `Ejecución #${processIdString}` : 'Nueva conciliación'}
+                          Nueva conciliación
                         </h1>
                         <p className="text-slate-500 text-[14px] font-medium mt-1">
-                          {isEmbedded ? `Ingesta de datos requerida para el proceso.` : 'Elige el proceso y define la fecha operativa para continuar.'}
+                          Elige el proceso y define la fecha operativa para continuar.
                         </p>
                       </div>
                     </div>
-                    {isEmbedded && (
-                       <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-bold rounded-xl transition-colors shadow-sm">
-                         Guardar y salir
-                       </button>
-                    )}
-                  </div>
-                  
-                  {/* Stepper or Tabs */}
-                  <div className="flex items-center gap-6 mt-2 relative">
-                    {isEmbedded ? (
-                      <>
-                        <button 
-                          onClick={() => setActiveTab('config')}
-                          className={`pb-4 text-[13.5px] font-bold border-b-2 transition-colors relative ${activeTab === 'config' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-                        >
-                          Configuración
-                        </button>
-                        <button 
-                          onClick={() => setActiveTab('ingesta')}
-                          className={`pb-4 text-[13.5px] font-bold border-b-2 transition-colors relative ${activeTab === 'ingesta' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-                        >
-                          Ingesta de datos
-                          {estadoGeneralIngesta.allowed && activeTab !== 'ingesta' && (
-                            <span className="absolute -top-1 -right-3 flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                          )}
-                        </button>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-2 mb-5">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold bg-primary text-white`}>1</div>
-                          <span className={`text-[13px] font-bold text-slate-800`}>Configuración</span>
-                        </div>
-                        <div className="w-10 h-px bg-slate-300"></div>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold bg-slate-200 text-slate-500`}>2</div>
-                          <span className={`text-[13px] font-bold text-slate-500`}>Ingesta de datos</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
-                {!isEmbedded && (
-                  <button 
-                    onClick={onClose}
-                    className="absolute top-6 right-8 p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative z-10"
-                  >
-                    <X size={20} />
-                  </button>
-                )}
+                <button 
+                  onClick={onClose}
+                  className="absolute top-6 right-8 p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative z-10"
+                >
+                  <X size={20} />
+                </button>
               </div>
             </div>
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto w-full bg-slate-50/50">
               <div className="max-w-6xl mx-auto h-full relative">
-                {(!isEmbedded || activeTab === 'config') ? (
                 <div className="p-8 pb-10 grid grid-cols-1 md:grid-cols-12 gap-10 items-center relative h-full">
                   <div className="absolute left-[58%] top-0 bottom-0 w-px bg-gradient-to-b from-primary/10 via-primary/[0.05] to-transparent pointer-events-none hidden md:block"></div>
                   
@@ -288,7 +244,7 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                         <ul className="space-y-3 ml-1">
                           {fuentes.map(f => (
                             <li key={f.id} className="flex items-center gap-2.5">
-                              {f.type === 'Excel' ? <FileSpreadsheet size={14} className={f.required ? "text-emerald-500 shrink-0" : "text-slate-400 shrink-0"} /> : <FileText size={14} className={f.required ? "text-sky-500 shrink-0" : "text-slate-400 shrink-0"} />}
+                              {f.type === 'Excel' ? <FileSpreadsheet size={14} className={f.required ? "text-emerald-500 shrink-0" : "text-emerald-400 shrink-0"} /> : f.type === 'CSV' ? <Database size={14} className={f.required ? "text-sky-500 shrink-0" : "text-sky-400 shrink-0"} /> : <FileText size={14} className={f.required ? "text-indigo-500 shrink-0" : "text-indigo-400 shrink-0"} />}
                               <span className={`text-[13px] ${f.required ? 'font-medium text-slate-700' : 'font-medium text-slate-600'}`}>{f.name}</span>
                               <span className="text-[12px] text-slate-400 font-medium whitespace-nowrap">· {f.type}</span>
                               {!f.required && (
@@ -326,117 +282,12 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="p-8">
-                  {/* Contexto de ejecución Informative Banner */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-6 gap-4">
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                       <div className="flex flex-col">
-                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Proceso en ejecución</span>
-                         <span className="text-[13.5px] font-bold text-slate-800">{currentProceso.name}</span>
-                       </div>
-                       <div className="w-px h-8 bg-slate-200 hidden md:block"></div>
-                       <div className="flex flex-col">
-                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Versión configurada</span>
-                         <span className="text-[13.5px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded inline-flex">{currentProceso.version}</span>
-                       </div>
-                       <div className="w-px h-8 bg-slate-200 hidden md:block"></div>
-                       <div className="flex flex-col">
-                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Fecha operativa</span>
-                         <span className="text-[13.5px] font-bold text-slate-700 flex items-center gap-1.5"><Calendar size={14} className="text-slate-400"/> {fechaOperativa}</span>
-                       </div>
-                    </div>
-                    
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${estadoGeneralIngesta.color}`}>
-                      {estadoGeneralIngesta.icon}
-                      <span className="text-[12.5px] font-bold">{estadoGeneralIngesta.status}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {fuentes.map((fuente) => (
-                      <div key={fuente.id} className="bg-white border text-center text-left border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                        {fuente.required && (
-                          <div className="absolute top-0 right-0 w-2 h-full bg-rose-500/10"></div>
-                        )}
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                           
-                           {/* Source Info */}
-                           <div className="flex-1 space-y-1">
-                             <div className="flex items-center gap-2.5">
-                                <span className={`w-2.5 h-2.5 rounded-full ${fuente.required ? 'bg-rose-500' : 'bg-slate-300'}`}></span>
-                                <h4 className="text-[15px] font-bold text-slate-800">{fuente.name}</h4>
-                                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${fuente.required ? 'text-rose-700 bg-rose-50 border border-rose-100' : 'text-slate-500 bg-slate-100 border border-slate-200'}`}>
-                                  {fuente.required ? 'Requerida' : 'Opcional'}
-                                </span>
-                             </div>
-                             <div className="flex items-center gap-4 text-[12.5px] font-medium text-slate-500 pt-1 pl-5">
-                               <span>Archivo esperado: <strong className="text-slate-700">{fuente.type}</strong></span>
-                               {fuente.sheetExpected && (
-                                  <>
-                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                    <span>Hoja: <strong className="text-slate-700">{fuente.sheetExpected}</strong></span>
-                                  </>
-                               )}
-                             </div>
-                           </div>
-
-                           {/* Upload Area / Status Area */}
-                           <div className="flex-1 max-w-sm w-full">
-                              {fuente.estado === 'pendiente' ? (
-                                <div className="border border-dashed border-slate-300 rounded-xl p-4 bg-slate-50 flex flex-col items-center justify-center text-center group hover:bg-indigo-50 hover:border-indigo-300 transition-colors cursor-pointer">
-                                  <UploadCloud size={24} className="text-slate-400 group-hover:text-indigo-500 mb-2 transition-colors" />
-                                  <span className="text-[13px] font-bold text-slate-600 group-hover:text-indigo-600">Clic o arrastrar archivo</span>
-                                  <span className="text-[11px] text-slate-400 font-medium">Solo formato {fuente.type}</span>
-                                  
-                                  {/* Hidden dummy buttons to simulate reading for the prototype */}
-                                  <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'ok') }} className="px-2 py-1 text-[10px] bg-emerald-100 text-emerald-700 font-bold rounded">OK</button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'warn') }} className="px-2 py-1 text-[10px] bg-amber-100 text-amber-700 font-bold rounded">Warn</button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'error') }} className="px-2 py-1 text-[10px] bg-rose-100 text-rose-700 font-bold rounded">Error</button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className={`border rounded-xl p-4 ${fuente.estado === 'cargada' ? 'bg-emerald-50/50 border-emerald-200' : fuente.estado === 'cargada_advertencias' ? 'bg-amber-50/50 border-amber-200' : 'bg-rose-50/50 border-rose-200'}`}>
-                                   <div className="flex items-start justify-between mb-3">
-                                     <div className="flex items-center gap-2">
-                                        <FileCheck size={18} className={fuente.estado === 'cargada' ? 'text-emerald-500' : fuente.estado === 'cargada_advertencias' ? 'text-amber-500' : 'text-rose-500'} />
-                                        <div className="flex flex-col">
-                                          <span className="text-[13px] font-bold text-slate-700 truncate max-w-[150px]" title={fuente.archivo}>{fuente.archivo}</span>
-                                          <span className="text-[11px] font-medium text-slate-500">{fuente.estado === 'error' ? 'Error al leer archivo' : `${fuente.registrosLeidos} registros leídos`} {fuente.estado !== 'error' && fuente.hojaLeida && ` | ${fuente.hojaLeida}`}</span>
-                                        </div>
-                                     </div>
-                                     <button 
-                                        onClick={() => handleSimularCarga(fuente.id, 'error')} // In reality this resets state or opens file picker again
-                                        className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
-                                        title="Reemplazar archivo"
-                                     >
-                                        <RefreshCw size={14} />
-                                     </button>
-                                   </div>
-                                   
-                                   {/* Context messages */}
-                                   {fuente.mensaje && (
-                                     <div className={`text-[12px] font-medium leading-snug p-2 rounded-lg ${fuente.estado === 'error' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>
-                                       {fuente.mensaje}
-                                     </div>
-                                   )}
-                                </div>
-                              )}
-                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               </div>
             </div>
 
             {/* Footer */}
             <div className="bg-white shrink-0 border-t border-slate-100 relative z-10 w-full">
               <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-between">
-                {!isEmbedded ? (
                 <>
                   <button 
                     onClick={onClose}
@@ -452,37 +303,6 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                     <ArrowRight size={16} className="text-white/80" />
                   </button>
                 </>
-              ) : activeTab === 'config' ? (
-                <>
-                  <div/>
-                  <button 
-                    onClick={() => setActiveTab('ingesta')}
-                    className="px-6 py-2.5 text-[14px] font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl shadow-lg shadow-slate-900/20 hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                  >
-                    Siguiente: Ingesta de datos
-                    <ArrowRight size={16} className="text-white/80" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div/>
-                  <button 
-                    disabled={!estadoGeneralIngesta.allowed}
-                    onClick={() => {
-                      // Navigate to data prep or finish
-                      onClose();
-                    }}
-                    className={`px-6 py-2.5 text-[14px] font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 ${
-                      estadoGeneralIngesta.allowed 
-                        ? 'text-white bg-slate-800 hover:bg-slate-900 shadow-slate-900/20 hover:-translate-y-0.5 cursor-pointer' 
-                        : 'text-slate-400 bg-slate-200 shadow-none cursor-not-allowed'
-                    }`}
-                  >
-                    Continuar a preparación
-                    <Check size={16} className={estadoGeneralIngesta.allowed ? "text-white/80" : "text-slate-400"} />
-                  </button>
-                </>
-              )}
               </div>
             </div>
           </div>
@@ -568,8 +388,8 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                   {/* Top info */}
                   <div className="flex justify-between items-start mb-5">
                     <div className="flex items-center gap-3.5">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${fuente.required ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                        {fuente.type === 'Excel' ? <FileSpreadsheet size={24} /> : <FileText size={24} />}
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${fuente.required ? (fuente.type === 'Excel' ? 'bg-emerald-900 text-emerald-400' : fuente.type === 'CSV' ? 'bg-sky-900 text-sky-400' : 'bg-indigo-900 text-indigo-400') : (fuente.type === 'Excel' ? 'bg-emerald-50 text-emerald-500' : fuente.type === 'CSV' ? 'bg-sky-50 text-sky-500' : 'bg-indigo-50 text-indigo-500')}`}>
+                        {fuente.type === 'Excel' ? <FileSpreadsheet size={24} /> : fuente.type === 'CSV' ? <Database size={24} /> : <FileText size={24} />}
                       </div>
                       <div>
                         <h4 className="text-[16px] font-bold text-slate-800 leading-tight mb-1">{fuente.name}</h4>
