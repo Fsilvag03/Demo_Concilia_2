@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-interface NuevaEjecucionProps {
+interface FormularioProcesoProps {
   isOpen: boolean;
   onClose: () => void;
   onStartIngesta?: (procesoId: string, fecha: string) => void;
@@ -26,7 +26,7 @@ interface FuenteData {
   mensaje?: string;
 }
 
-export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams }: NuevaEjecucionProps) {
+export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoParams }: FormularioProcesoProps) {
   const isEmbedded = !!procesoParams;
   const [procesoId, setProcesoId] = useState(procesoParams?.procesoId || '1');
   const [fechaOperativa, setFechaOperativa] = useState(procesoParams?.fecha || new Date().toISOString().split('T')[0]);
@@ -371,6 +371,40 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
                 </div>
               </div>
             </div>
+
+            {/* Fases / Stepper Visual */}
+            <div className="mt-8 pt-6 border-t border-slate-700/50 flex items-center justify-between gap-2 md:gap-4 w-full relative z-10 max-w-5xl">
+              {[
+                { id: 1, name: 'Ingesta de Datos', state: 'current' },
+                { id: 2, name: 'Preparación', state: 'pending' },
+                { id: 3, name: 'Reglas y Cruces', state: 'pending' },
+                { id: 4, name: 'Resultados', state: 'pending' }
+              ].map((step, idx, arr) => (
+                <React.Fragment key={step.id}>
+                  <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 group shrink-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold shadow-sm transition-all duration-300 z-10 ${
+                      step.state === 'completed' ? 'bg-secondary text-primary-dark' :
+                      step.state === 'current' ? 'bg-secondary text-primary-dark ring-4 ring-secondary/20 scale-110' :
+                      'bg-primary-dark/50 border border-slate-700 text-slate-500'
+                    }`}>
+                      {step.state === 'completed' ? <Check size={16} strokeWidth={3} /> : step.id}
+                    </div>
+                    <span className={`text-[12px] md:text-[13px] font-bold tracking-wide whitespace-nowrap hidden sm:block ${
+                      step.state === 'completed' ? 'text-slate-300' :
+                      step.state === 'current' ? 'text-white' :
+                      'text-slate-500'
+                    }`}>
+                      {step.name}
+                    </span>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <div className={`flex-1 min-w-[20px] h-px hidden sm:block ${
+                      step.state === 'completed' ? 'bg-secondary/40' : 'bg-slate-700/50'
+                    }`}></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -476,7 +510,7 @@ export function NuevaEjecucion({ isOpen, onClose, onStartIngesta, procesoParams 
         <div className="bg-primary px-8 py-5 md:px-12 shrink-0 relative flex items-center justify-between border-t border-primary-dark">
           <button 
             onClick={onClose}
-            className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white hover:bg-primary-dark rounded-lg transition-colors border border-transparent hover:border-slate-700"
+            className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white bg-primary-dark/50 hover:bg-primary-dark rounded-lg transition-colors border border-slate-700 hover:border-slate-600 shadow-sm"
           >
             Guardar y continuar luego
           </button>

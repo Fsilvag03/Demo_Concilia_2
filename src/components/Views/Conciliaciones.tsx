@@ -7,7 +7,7 @@ import {
 import { motion } from 'motion/react';
 
 import { ViewType } from '../../App';
-import { NuevaEjecucion } from './NuevaEjecucion';
+import { FormularioProceso } from './FormularioProceso';
 
 interface ConciliacionesProps {
   onNavigate?: (view: ViewType) => void;
@@ -22,7 +22,7 @@ const procesos = [
 
 export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeIngesta, setActiveIngesta] = useState<{procesoId: string, fecha: string} | null>(null);
+  const [activeProceso, setActiveProceso] = useState<{procesoId: string, fecha: string} | null>(null);
 
   const subsecciones = [
     { title: 'Procesos configurados', icon: Settings2, desc: 'Define y gestiona el flujo de trabajo' },
@@ -32,12 +32,12 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
     { title: 'Historial', icon: History, desc: 'Consulta corridas anteriores' },
   ];
 
-  if (activeIngesta) {
+  if (activeProceso) {
     return (
       <div className="flex-1 w-full h-full flex flex-col relative bg-white animate-in fade-in duration-500 overflow-hidden">
-        <NuevaEjecucion 
-          procesoParams={activeIngesta} 
-          onClose={() => setActiveIngesta(null)} 
+        <FormularioProceso 
+          procesoParams={activeProceso} 
+          onClose={() => setActiveProceso(null)} 
           isOpen={true} 
         />
       </div>
@@ -169,12 +169,12 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
         </div>
       </section>
 
-      <NuevaEjecucion 
+      <FormularioProceso 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onStartIngesta={(procesoId, fecha) => {
           setIsModalOpen(false);
-          setActiveIngesta({procesoId, fecha});
+          setActiveProceso({procesoId, fecha});
         }}
       />
     </div>

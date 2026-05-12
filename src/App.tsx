@@ -13,7 +13,7 @@ import { Aprobaciones } from "./components/Views/Aprobaciones";
 import { Resultados } from "./components/Views/Resultados";
 import { Auditoria } from "./components/Views/Auditoria";
 import { Administracion } from "./components/Views/Administracion";
-import { NuevaEjecucion } from "./components/Views/NuevaEjecucion";
+import { FormularioProceso } from "./components/Views/FormularioProceso";
 
 export type ViewType = 
   | 'inicio' 
