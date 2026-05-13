@@ -146,6 +146,7 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
           id: f.id,
           name: f.name,
           archivo: f.archivo,
+          required: f.required,
           estado: isFuenteError ? 'error' : isFuenteWarn ? 'advertencia' : 'ok',
           detallesFuente: mockErrors.filter(e => e.fuente === f.name),
           resumenEjecucion: {
@@ -431,10 +432,12 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                   <div className="px-2.5 py-0.5 rounded border border-primary/20 text-primary-dark text-[10px] font-bold tracking-widest uppercase bg-primary/5 shadow-sm">
                     {fase === 'ingesta' ? 'Fase 1: Ingesta' : fase.startsWith('preparacion') ? 'Fase 2: Preparación' : 'Fase 3: Conciliación'}
                   </div>
-                  {fase === 'ingesta' && estadoGeneralIngesta.allowed && (
-                    <div className="flex items-center gap-1 px-2.5 py-0.5 rounded border border-secondary/40 bg-secondary/10 text-emerald-700 text-[10px] font-bold tracking-widest uppercase shadow-sm">
-                      <CheckCircle2 size={12} />
-                      Listo para preparación
+                  {fase === 'ingesta' && (
+                    <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded border text-[10px] font-bold tracking-widest uppercase shadow-sm ${
+                      estadoGeneralIngesta.allowed ? 'border-secondary/40 bg-secondary/10 text-emerald-700' : 'border-rose-500/30 bg-rose-500/10 text-rose-600'
+                    }`}>
+                      {estadoGeneralIngesta.allowed ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                      {estadoGeneralIngesta.allowed ? 'Listo para preparación' : 'Faltan requerimientos'}
                     </div>
                   )}
                   {fase.startsWith('preparacion') && prepResult && (
@@ -524,7 +527,7 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                   <h2 className="text-xl font-bold text-primary-dark">Fuentes de información requeridas</h2>
                   <p className="text-[15px] text-slate-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
                 </div>
-                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-secondary/10 border-secondary/20 text-emerald-800' : 'bg-white border-primary/10 text-primary-dark'} shadow-sm transition-colors`}>
+                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.color} shadow-sm transition-colors`}>
                   {estadoGeneralIngesta.icon}
                   <span className="text-[14px] font-bold tracking-wide">{estadoGeneralIngesta.status}</span>
                 </div>
@@ -650,7 +653,12 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                         {fuente.estado === 'error' ? <FileX size={18} /> : fuente.estado === 'advertencia' ? <AlertTriangle size={18} /> : <FileCheck size={18} />}
                       </div>
                       <div>
-                        <h3 className="text-[15px] font-bold leading-none mb-1 text-slate-800">{fuente.name}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-[14px] font-bold leading-none text-slate-800">{fuente.name}</h3>
+                          <span className={`text-[8.5px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${fuente.required ? 'text-primary border border-primary/20 bg-primary/5' : 'text-slate-500 border border-slate-200 bg-white border-dashed'}`}>
+                            {fuente.required ? 'Requerida' : 'Opcional'}
+                          </span>
+                        </div>
                         <p className="text-[11px] text-slate-500">{fuente.archivo}</p>
                       </div>
                     </div>
@@ -683,26 +691,26 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                     </div>
 
                     {/* Resumen Reglas */}
-                    <div className="p-5 border-b border-slate-100 bg-slate-50/30">
-                      <h4 className="text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center justify-between">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50/30">
+                      <h4 className="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider flex items-center justify-between">
                         Reglas Aplicadas
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                        <span className="text-[9px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
                           {Object.values(fuente.resumenReglas).reduce((acc: any, val: any) => acc + val.ejecutadas, 0)} totales
                         </span>
                       </h4>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {Object.entries(fuente.resumenReglas).map(([key, data]: [string, any]) => {
                           const isSelected = selectedRuleCategory[fuente.id] === key;
                           return (
                             <button
                                key={key} 
                                onClick={() => setSelectedRuleCategory(prev => ({ ...prev, [fuente.id]: isSelected ? null : key }))}
-                               className={`w-full flex justify-between items-center px-3 py-2 rounded-lg border transition-all text-left group ${isSelected ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'}`}
+                               className={`w-full flex justify-between items-center px-2 py-1.5 rounded-lg border transition-all text-left group ${isSelected ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-white border-transparent hover:border-slate-300 shadow-sm'}`}
                             >
-                              <span className={`text-[12px] font-bold capitalize transition-colors ${isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-slate-800'}`}>{key}</span>
-                              <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+                              <span className={`text-[11px] font-bold capitalize transition-colors ${isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-slate-800'}`}>{key}</span>
+                              <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-slate-500">
                                 <span className={data.ejecutadas < data.total ? "text-amber-600 font-bold" : "text-emerald-600 font-bold"}>{data.ejecutadas}</span>
-                                <span className="text-slate-300">/</span>
+                                <span className="text-slate-300 text-[10px]">/</span>
                                 <span>{data.total}</span>
                               </div>
                             </button>
@@ -712,25 +720,25 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                     </div>
 
                     {/* Detalle de Reglas (Conditional) */}
-                    <div className="p-5 bg-white flex-1 flex flex-col">
+                    <div className="p-4 bg-white flex-1 flex flex-col">
                        {selectedRuleCategory[fuente.id] ? (
                           <div className="animate-in fade-in duration-300">
-                             <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                             <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
                                 Detalle de {selectedRuleCategory[fuente.id]}
                                 <div className="h-px bg-slate-100 flex-1"></div>
                              </h5>
-                             <ul className="space-y-3">
+                             <ul className="space-y-2">
                                {fuente.resumenReglas[selectedRuleCategory[fuente.id]].aplicadas.map((regla: any, i: number) => (
-                                 <li key={i} className="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                                 <li key={i} className="flex flex-col gap-1 p-2 rounded-xl border border-slate-100 bg-slate-50/50">
                                    <div className="flex items-center gap-2">
                                       {regla.estado === 'error' ? <X size={14} className="text-rose-500 shrink-0"/> :
                                        regla.estado === 'advertencia' ? <AlertTriangle size={14} className="text-amber-500 shrink-0"/> :
                                        regla.estado === 'pendiente' ? <div className="w-1.5 h-1.5 m-1 rounded-full bg-slate-300 shrink-0"></div> :
                                        <Check size={14} className="text-emerald-500 shrink-0"/>}
-                                      <span className={`text-[12px] font-bold ${regla.estado === 'pendiente' ? 'text-slate-400' : 'text-slate-700'}`}>{regla.nombre}</span>
+                                      <span className={`text-[11.5px] font-bold ${regla.estado === 'pendiente' ? 'text-slate-400' : 'text-slate-700'}`}>{regla.nombre}</span>
                                    </div>
                                    {regla.detalle && (
-                                     <p className="text-[11px] text-slate-500 pl-6 leading-relaxed">
+                                     <p className="text-[10.5px] text-slate-500 pl-6 leading-snug">
                                        {regla.detalle}
                                      </p>
                                    )}
@@ -740,32 +748,32 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                           </div>
                        ) : (
                           <div className="animate-in fade-in duration-300 h-full flex flex-col">
-                             <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                             <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
                                  Alertas Detección
                                 <div className="h-px bg-slate-100 flex-1"></div>
                              </h5>
                              
                              {fuente.detallesFuente && fuente.detallesFuente.length > 0 ? (
-                               <div className="space-y-3">
+                               <div className="space-y-2">
                                  {fuente.detallesFuente.map((detalle: any, idx: number) => (
-                                   <div key={idx} className={`p-3 rounded-xl border ${detalle.bloqueante ? 'bg-rose-50 border-rose-100' : 'bg-amber-50 border-amber-100'}`}>
-                                     <div className="flex justify-between items-start mb-1 gap-2">
-                                       <span className="text-[12px] font-bold text-slate-800">{detalle.reglaOControl}</span>
-                                       <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded shrink-0 ${detalle.bloqueante ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                                   <div key={idx} className={`p-2 rounded-lg border ${detalle.bloqueante ? 'bg-rose-50 border-rose-100' : 'bg-amber-50 border-amber-100'}`}>
+                                     <div className="flex justify-between items-start mb-0.5 gap-2">
+                                       <span className="text-[11.5px] font-bold text-slate-800 leading-tight">{detalle.reglaOControl}</span>
+                                       <span className={`px-1.5 py-[1px] text-[8.5px] font-bold uppercase tracking-widest rounded shrink-0 ${detalle.bloqueante ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
                                           {detalle.bloqueante ? 'Error' : 'Aviso'}
                                        </span>
                                      </div>
-                                     <p className="text-[11px] text-slate-600 mt-1.5 leading-relaxed">{detalle.motivo}</p>
+                                     <p className="text-[10.5px] text-slate-600 mt-1 leading-snug">{detalle.motivo}</p>
                                    </div>
                                  ))}
                                </div>
                              ) : (
-                               <div className="h-full min-h-[120px] flex flex-col items-center justify-center text-center p-4 bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
-                                  <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-2 shadow-sm text-emerald-500">
-                                    <CheckCircle2 size={16} />
+                               <div className="h-full min-h-[100px] flex flex-col items-center justify-center text-center p-3 bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
+                                  <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-1.5 shadow-sm text-emerald-500">
+                                    <CheckCircle2 size={12} />
                                   </div>
-                                  <span className="text-[12px] font-bold text-slate-700">Sin alertas detectadas</span>
-                                  <span className="text-[11px] text-slate-500 mt-1 max-w-[200px]">Haz clic en cualquier categoría arriba para examinar el detalle de las reglas aplicadas.</span>
+                                  <span className="text-[11.5px] font-bold text-slate-700">Sin alertas detectadas</span>
+                                  <span className="text-[10px] text-slate-500 max-w-[180px]">Haz clic en cualquier categoría para examinar las reglas aplicadas.</span>
                                </div>
                              )}
                           </div>
