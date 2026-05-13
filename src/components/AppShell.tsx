@@ -6,10 +6,11 @@ import { ViewType } from '../App';
 interface AppShellProps {
   children: React.ReactNode;
   currentView: ViewType;
+  subPath?: string | null;
   onNavigate: (view: ViewType) => void;
 }
 
-export function AppShell({ children, currentView, onNavigate }: AppShellProps) {
+export function AppShell({ children, currentView, subPath, onNavigate }: AppShellProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
@@ -21,7 +22,7 @@ export function AppShell({ children, currentView, onNavigate }: AppShellProps) {
         onNavigate={onNavigate}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Topbar />
+        <Topbar currentView={currentView} subPath={subPath} />
         <main className="flex-1 overflow-y-auto w-full flex flex-col relative">
           <div className="flex-1 flex flex-col min-h-full">
             {children}

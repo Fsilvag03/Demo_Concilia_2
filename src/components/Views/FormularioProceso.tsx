@@ -418,66 +418,68 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
 
   if (isEmbedded) {
     return (
-      <div className="flex-1 flex flex-col bg-zinc-50/50 relative w-full h-full overflow-hidden">
-        {/* Sober Professional Header */}
-        <div className="bg-primary px-8 py-8 md:px-12 shrink-0 border-b-4 border-secondary relative overflow-hidden">
+      <div className="flex-1 flex flex-col bg-slate-100 relative w-full h-full overflow-hidden">
+        {/* Bright Professional Header */}
+        <div className="bg-white border-b border-slate-200/80 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] relative overflow-hidden shrink-0 z-20">
           {/* Subtle background decoration */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
 
-          <button 
-            onClick={onClose}
-            className="absolute top-6 right-8 text-slate-300 hover:text-white transition-colors z-20 bg-primary-dark/50 hover:bg-primary-dark p-2.5 rounded-full border border-primary-dark shadow-sm"
-            title="Cerrar y volver a Conciliaciones"
-          >
-            <X size={20} />
-          </button>
-          
-          <div className="w-full flex flex-col pt-2">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 z-10 relative">
+          <div className="w-full flex flex-col pt-5 pb-4 px-6 md:px-10 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="px-3 py-1 rounded border border-primary-dark text-slate-300 text-[11px] font-bold tracking-widest uppercase bg-primary-dark/50 shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="px-2.5 py-0.5 rounded border border-primary/20 text-primary-dark text-[10px] font-bold tracking-widest uppercase bg-primary/5 shadow-sm">
                     {fase === 'ingesta' ? 'Fase 1: Ingesta' : fase.startsWith('preparacion') ? 'Fase 2: Preparación' : 'Fase 3: Conciliación'}
                   </div>
                   {fase === 'ingesta' && estadoGeneralIngesta.allowed && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded border border-secondary/30 bg-secondary/10 text-secondary text-[11px] font-bold tracking-widest uppercase shadow-sm">
+                    <div className="flex items-center gap-1 px-2.5 py-0.5 rounded border border-secondary/40 bg-secondary/10 text-emerald-700 text-[10px] font-bold tracking-widest uppercase shadow-sm">
                       <CheckCircle2 size={12} />
                       Listo para preparación
                     </div>
                   )}
                   {fase.startsWith('preparacion') && prepResult && (
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded border text-[11px] font-bold tracking-widest uppercase shadow-sm ${prepResult.estado === 'Listo para conciliar' ? 'border-secondary/30 bg-secondary/10 text-secondary' : prepResult.estado === 'Preparación con observaciones' ? 'border-amber-500/30 bg-amber-500/10 text-amber-500' : 'border-rose-500/30 bg-rose-500/10 text-rose-500'}`}>
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded border text-[11px] font-bold tracking-widest uppercase shadow-sm ${prepResult.estado === 'Listo para conciliar' ? 'border-secondary/40 bg-secondary/10 text-emerald-700' : prepResult.estado === 'Preparación con observaciones' ? 'border-amber-500/30 bg-amber-500/10 text-amber-600' : 'border-rose-500/30 bg-rose-500/10 text-rose-600'}`}>
                       {prepResult.estado === 'Listo para conciliar' ? <CheckCircle2 size={12} /> : prepResult.estado === 'Preparación con observaciones' ? <AlertTriangle size={12} /> : <AlertCircle size={12} />}
                       {prepResult.estado}
                     </div>
                   )}
                 </div>
                 {/* Título: Proceso + Identificador */}
-                <h1 className="text-3xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-primary-dark tracking-tight flex items-center">
                   {currentProceso.name} 
-                  <span className="text-slate-400 font-normal ml-3 text-2xl tracking-normal">#{processIdString}</span>
+                  <span className="text-primary/40 font-semibold ml-2 text-xl tracking-normal">#{processIdString}</span>
                 </h1>
               </div>
 
-              {/* Contenedor Versión y Fecha Operativa */}
-              <div className="flex items-center gap-8 px-6 py-4 rounded-xl border border-primary-dark bg-primary-dark/50 shadow-sm backdrop-blur-sm">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Versión</span>
-                  <span className="text-[14px] font-semibold text-white">{currentProceso.version}</span>
-                </div>
-                <div className="w-px h-10 bg-slate-700"></div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha Operativa</span>
-                  <div className="flex items-center gap-2 text-[14px] font-semibold text-white">
-                    <Calendar size={16} className="text-secondary" />
-                    {fechaOperativa}
+              {/* Contenedor Versión, Fecha Operativa y Cerrar */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-6 px-4 py-2.5 rounded-lg border border-primary/10 bg-slate-50 shadow-sm ring-1 ring-primary/5 h-[52px]">
+                  <div className="flex justify-center flex-col">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Versión</span>
+                    <span className="text-[13px] font-bold text-slate-800 leading-none">{currentProceso.version}</span>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200"></div>
+                  <div className="flex justify-center flex-col">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Fecha Operativa</span>
+                    <div className="flex items-center gap-1.5 text-[13px] font-bold text-slate-800 leading-none">
+                      <Calendar size={14} className="text-secondary" />
+                      {fechaOperativa}
+                    </div>
                   </div>
                 </div>
+                
+                <button 
+                  onClick={onClose}
+                  className="w-[52px] h-[52px] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-200 border border-slate-200 bg-white rounded-lg transition-colors shadow-sm"
+                  title="Cerrar y volver a Conciliaciones"
+                >
+                  <X size={20} />
+                </button>
               </div>
             </div>
 
             {/* Fases / Stepper Visual */}
-            <div className="mt-8 pt-6 border-t border-slate-700/50 flex items-center justify-between gap-2 md:gap-4 w-full relative z-10 max-w-5xl">
+            <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between gap-2 md:gap-4 w-full relative max-w-5xl">
               {[
                 { id: 1, name: 'Ingesta de Datos', state: fase === 'ingesta' ? 'current' : 'completed' },
                 { id: 2, name: 'Preparación', state: fase.startsWith('preparacion') ? 'current' : fase === 'reglas_y_cruces' ? 'completed' : 'pending' },
@@ -486,24 +488,24 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
               ].map((step, idx, arr) => (
                 <React.Fragment key={step.id}>
                   <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 group shrink-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold shadow-sm transition-all duration-300 z-10 ${
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shadow-sm transition-all duration-300 z-10 ${
                       step.state === 'completed' ? 'bg-secondary text-primary-dark' :
-                      step.state === 'current' ? 'bg-secondary text-primary-dark ring-4 ring-secondary/20 scale-110' :
-                      'bg-primary-dark/50 border border-slate-700 text-slate-500'
+                      step.state === 'current' ? 'bg-primary text-white ring-4 ring-primary/10' :
+                      'bg-slate-100 border border-slate-200 text-slate-400'
                     }`}>
-                      {step.state === 'completed' ? <Check size={16} strokeWidth={3} /> : step.id}
+                      {step.state === 'completed' ? <Check size={14} strokeWidth={3} /> : step.id}
                     </div>
-                    <span className={`text-[12px] md:text-[13px] font-bold tracking-wide whitespace-nowrap hidden sm:block ${
-                      step.state === 'completed' ? 'text-slate-300' :
-                      step.state === 'current' ? 'text-white' :
-                      'text-slate-500'
+                    <span className={`text-[12px] font-bold tracking-wide whitespace-nowrap hidden sm:block ${
+                      step.state === 'completed' ? 'text-slate-500' :
+                      step.state === 'current' ? 'text-primary' :
+                      'text-slate-400'
                     }`}>
                       {step.name}
                     </span>
                   </div>
                   {idx < arr.length - 1 && (
                     <div className={`flex-1 min-w-[20px] h-px hidden sm:block ${
-                      step.state === 'completed' ? 'bg-secondary/40' : 'bg-slate-700/50'
+                      step.state === 'completed' ? 'bg-secondary' : 'bg-slate-200'
                     }`}></div>
                   )}
                 </React.Fragment>
@@ -513,16 +515,16 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
         </div>
 
         {/* Body Area */}
-        <div className="flex-1 overflow-y-auto w-full px-8 py-8 md:px-12 relative bg-slate-50">
+        <div className="flex-1 overflow-y-auto w-full px-8 py-8 md:px-12 relative bg-slate-100/80">
           
           {fase === 'ingesta' && (
             <div className="w-full relative z-10 animate-in fade-in duration-300">
               <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-zinc-900">Fuentes de información requeridas</h2>
-                  <p className="text-[15px] text-zinc-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
+                  <h2 className="text-xl font-bold text-primary-dark">Fuentes de información requeridas</h2>
+                  <p className="text-[15px] text-slate-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
                 </div>
-                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-600'} shadow-sm transition-colors`}>
+                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-secondary/10 border-secondary/20 text-emerald-800' : 'bg-white border-primary/10 text-primary-dark'} shadow-sm transition-colors`}>
                   {estadoGeneralIngesta.icon}
                   <span className="text-[14px] font-bold tracking-wide">{estadoGeneralIngesta.status}</span>
                 </div>
@@ -530,17 +532,17 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {fuentes.map((fuente) => (
-                  <div key={fuente.id} className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative flex flex-col h-full group ${fuente.estado === 'cargada' ? 'border-emerald-200' : 'border-zinc-200'}`}>
+                  <div key={fuente.id} className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative flex flex-col h-full group ${fuente.estado === 'cargada' ? 'border-secondary/40 ring-1 ring-secondary/20' : 'border-primary/10 hover:border-primary/30'}`}>
                     
                     {/* Top info */}
                     <div className="flex justify-between items-start mb-5">
                       <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-zinc-200 bg-zinc-50 text-zinc-600">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${fuente.estado === 'cargada' ? 'border-secondary/20 bg-secondary/5 text-secondary-dark' : 'border-primary/10 bg-primary/5 text-primary'}`}>
                           {fuente.type === 'Excel' ? <FileSpreadsheet size={20} /> : fuente.type === 'CSV' ? <Database size={20} /> : <FileText size={20} />}
                         </div>
                         <div>
-                          <h4 className="text-[15px] font-bold text-zinc-800 leading-tight mb-1">{fuente.name}</h4>
-                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${fuente.required ? 'text-zinc-700 bg-zinc-100 border border-zinc-200' : 'text-zinc-500 bg-white border border-zinc-200 border-dashed'}`}>
+                          <h4 className="text-[15px] font-bold text-primary-dark leading-tight mb-1">{fuente.name}</h4>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${fuente.required ? 'text-primary/70 bg-primary/5 border border-primary/10' : 'text-slate-500 bg-white border border-slate-200 border-dashed'}`}>
                             {fuente.required ? 'Requerida' : 'Opcional'}
                           </span>
                         </div>
@@ -778,61 +780,62 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
         </div>
 
         {/* Refined Footer Actions - Full Width */}
-        <div className="bg-primary px-8 py-5 md:px-12 shrink-0 relative flex items-center justify-between border-t border-primary-dark shadow-[-0_10px_40px_-10px_rgba(0,0,0,0.5)]">
+        <div className="bg-white px-6 py-4 md:px-10 shrink-0 relative flex items-center justify-between border-t border-slate-200/80 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.08)] z-20">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent pointer-events-none"></div>
           {fase === 'ingesta' ? (
             <>
-              <button 
-                onClick={onClose}
-                className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white bg-primary-dark/50 hover:bg-primary-dark rounded-lg transition-colors border border-slate-700 hover:border-slate-600 shadow-sm"
-              >
-                Guardar y continuar luego
-              </button>
-              
-              <button 
-                disabled={!estadoGeneralIngesta.allowed}
-                onClick={handleStartPreparacion}
-                className={`px-8 py-3 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                  estadoGeneralIngesta.allowed 
-                    ? 'text-primary-dark bg-secondary hover:bg-secondary-dark shadow-sm cursor-pointer hover:shadow-secondary/20' 
-                    : 'text-slate-500 bg-primary-dark shadow-none cursor-not-allowed border border-slate-700'
-                }`}
-              >
-                Iniciar Preparación
-                <ArrowRight size={18} className={estadoGeneralIngesta.allowed ? "text-primary-dark" : "text-slate-600"} />
-              </button>
+               <button 
+                 onClick={onClose}
+                 className="px-5 py-2 text-[13px] font-semibold text-primary hover:text-primary-dark bg-white hover:bg-slate-50 rounded-lg transition-colors border border-primary/20 hover:border-primary/30 shadow-sm"
+               >
+                 Guardar y continuar luego
+               </button>
+               
+               <button 
+                 disabled={!estadoGeneralIngesta.allowed}
+                 onClick={handleStartPreparacion}
+                 className={`px-7 py-2.5 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                   estadoGeneralIngesta.allowed 
+                     ? 'text-white bg-primary hover:bg-primary-dark shadow-sm hover:shadow-primary/20 cursor-pointer' 
+                     : 'text-slate-400 bg-slate-100 shadow-none cursor-not-allowed border border-slate-200'
+                 }`}
+               >
+                 Iniciar Preparación
+                 <ArrowRight size={16} className={estadoGeneralIngesta.allowed ? "text-secondary" : "text-slate-400"} />
+               </button>
             </>
           ) : fase === 'preparacion_loading' ? (
              <div className="w-full flex justify-end">
                <button 
                  disabled
-                 className="px-8 py-3 text-[14px] font-semibold rounded-lg transition-all flex items-center gap-2 text-primary-dark bg-secondary/50 shadow-sm cursor-not-allowed"
+                 className="px-7 py-2.5 text-[14px] font-semibold rounded-lg transition-all flex items-center gap-2 text-white bg-primary/60 shadow-sm cursor-not-allowed"
                >
                  Preparando...
                </button>
              </div>
           ) : (
             <>
-              <button 
-                onClick={() => setFase('ingesta')}
-                className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white bg-primary-dark/50 hover:bg-primary-dark rounded-lg transition-colors border border-slate-700 shadow-sm"
-              >
-                Volver a Ingesta
-              </button>
-              
-              <button 
-                disabled={prepResult?.estado === 'Preparación con errores'}
-                onClick={() => {
-                  /* onClose(); in real app move to conciliar */
-                }}
-                className={`px-8 py-3 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                   prepResult?.estado !== 'Preparación con errores'
-                    ? 'text-primary-dark bg-secondary hover:bg-secondary-dark shadow-sm cursor-pointer hover:shadow-secondary/20' 
-                    : 'text-slate-500 bg-primary-dark shadow-none cursor-not-allowed border border-slate-700'
-                }`}
-              >
-                Continuar a Conciliación
-                <ArrowRight size={18} className={prepResult?.estado !== 'Preparación con errores' ? "text-primary-dark" : "text-slate-600"} />
-              </button>
+               <button 
+                 onClick={() => setFase('ingesta')}
+                 className="px-5 py-2 text-[13px] font-semibold text-primary hover:text-primary-dark bg-white hover:bg-slate-50 rounded-lg transition-colors border border-primary/20 hover:border-primary/30 shadow-sm"
+               >
+                 Volver a Ingesta
+               </button>
+               
+               <button 
+                 disabled={prepResult?.estado === 'Preparación con errores'}
+                 onClick={() => {
+                   /* onClose(); in real app move to conciliar */
+                 }}
+                 className={`px-7 py-2.5 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                    prepResult?.estado !== 'Preparación con errores'
+                     ? 'text-white bg-primary hover:bg-primary-dark shadow-sm hover:shadow-primary/20 cursor-pointer' 
+                     : 'text-slate-400 bg-slate-100 shadow-none cursor-not-allowed border border-slate-200'
+                 }`}
+               >
+                 Continuar a Conciliación
+                 <ArrowRight size={16} className={prepResult?.estado !== 'Preparación con errores' ? "text-secondary" : "text-slate-400"} />
+               </button>
             </>
           )}
         </div>

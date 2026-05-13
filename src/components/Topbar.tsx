@@ -1,13 +1,34 @@
 import React from 'react';
 import { Bell, HelpCircle, ChevronRight, Server } from 'lucide-react';
 
-export function Topbar() {
+interface TopbarProps {
+  currentView?: string;
+  subPath?: string | null;
+}
+
+export function Topbar({ currentView = 'inicio', subPath }: TopbarProps) {
+  const viewLabels: Record<string, string> = {
+    inicio: 'Inicio',
+    conciliaciones: 'Conciliaciones',
+    diferencias: 'Gestión de Diferencias',
+    aprobaciones: 'Aprobaciones',
+    resultados: 'Resultados',
+    auditoria: 'Auditoría',
+    configuracion: 'Configuración',
+    administracion: 'Administración'
+  };
+
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-10">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <span className="hover:text-primary cursor-pointer transition-colors">Gestión</span>
-        <ChevronRight size={14} className="text-slate-400" />
-        <span className="font-medium text-slate-900">Configuración</span>
+    <header className="relative h-16 bg-white flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary"></div>
+      <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500 uppercase tracking-wider relative z-10">
+        <span className="text-primary-dark">{viewLabels[currentView] || 'Inicio'}</span>
+        {subPath && (
+          <>
+            <ChevronRight size={14} className="text-slate-400" />
+            <span className="text-secondary-dark">{subPath}</span>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-4">

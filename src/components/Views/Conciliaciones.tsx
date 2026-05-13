@@ -11,6 +11,7 @@ import { FormularioProceso } from './FormularioProceso';
 
 interface ConciliacionesProps {
   onNavigate?: (view: ViewType) => void;
+  onSubPathChange?: (path: string | null) => void;
 }
 
 const procesos = [
@@ -20,9 +21,19 @@ const procesos = [
   { id: 4, name: 'Pagos Proveedores Exterior', status: 'Pausado', lastRun: 'Ayer 18:00 PM', progress: 0, color: 'rose' },
 ];
 
-export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
+export function Conciliaciones({ onNavigate, onSubPathChange }: ConciliacionesProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeProceso, setActiveProceso] = useState<{procesoId: string, fecha: string} | null>(null);
+
+  const handleOpenProceso = (procesoId: string, fecha: string) => {
+    setActiveProceso({procesoId, fecha});
+    if (onSubPathChange) onSubPathChange('Proceso Activo');
+  };
+
+  const handleCloseProceso = () => {
+    setActiveProceso(null);
+    if (onSubPathChange) onSubPathChange(null);
+  };
 
   const subsecciones = [
     { title: 'Procesos configurados', icon: Settings2, desc: 'Define y gestiona el flujo de trabajo' },
@@ -37,7 +48,7 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
       <div className="flex-1 w-full h-full flex flex-col relative bg-white animate-in fade-in duration-500 overflow-hidden">
         <FormularioProceso 
           procesoParams={activeProceso} 
-          onClose={() => setActiveProceso(null)} 
+          onClose={handleCloseProceso} 
           isOpen={true} 
         />
       </div>
@@ -174,7 +185,7 @@ export function Conciliaciones({ onNavigate }: ConciliacionesProps) {
         onClose={() => setIsModalOpen(false)} 
         onStartIngesta={(procesoId, fecha) => {
           setIsModalOpen(false);
-          setActiveProceso({procesoId, fecha});
+          handleOpenProceso(procesoId, fecha);
         }}
       />
     </div>

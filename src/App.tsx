@@ -27,11 +27,17 @@ export type ViewType =
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('inicio');
+  const [subPath, setSubPath] = useState<string | null>(null);
+
+  const handleNavigate = (view: ViewType) => {
+    setCurrentView(view);
+    setSubPath(null);
+  };
 
   const renderView = () => {
     switch (currentView) {
       case 'inicio': return <Inicio />;
-      case 'conciliaciones': return <Conciliaciones onNavigate={setCurrentView} />;
+      case 'conciliaciones': return <Conciliaciones onNavigate={handleNavigate} onSubPathChange={setSubPath} />;
       case 'diferencias': return <Diferencias />;
       case 'aprobaciones': return <Aprobaciones />;
       case 'resultados': return <Resultados />;
@@ -43,7 +49,7 @@ export default function App() {
   };
 
   return (
-    <AppShell currentView={currentView} onNavigate={setCurrentView}>
+    <AppShell currentView={currentView} subPath={subPath} onNavigate={handleNavigate}>
       {renderView()}
     </AppShell>
   );
