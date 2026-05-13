@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight
+  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight, Layers, GitMerge
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -216,43 +216,31 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
 
 
   const content = (
-          <div className={`${isEmbedded ? 'flex flex-col w-full h-full bg-slate-50 relative' : 'w-full max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 rounded-2xl shadow-2xl relative'}`}>
+          <div className="w-full max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 rounded-2xl shadow-2xl relative">
             {/* Header */}
-            <div className="bg-white shrink-0 shadow-sm relative z-10">
-              <div className="max-w-6xl mx-auto px-8 pt-6 pb-0 border-b border-primary/10 flex items-start justify-between relative overflow-hidden bg-white">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/80 to-indigo-400"></div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent pointer-events-none"></div>
-
-                <div className="relative z-10 w-full">
-                  {isEmbedded && (
-                    <div className="flex items-center gap-2 text-[12px] text-slate-500 mb-4 font-medium uppercase tracking-widest cursor-pointer group" onClick={onClose}>
-                       <span className="hover:text-primary transition-colors flex items-center gap-1"><ArrowLeft size={14}/> Volver a Conciliaciones</span>
-                       <span className="text-slate-300">/</span>
-                       <span className="text-slate-800">Proceso Activo</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between w-full mb-2 relative">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm shadow-primary/5">
-                        <Play size={20} className="fill-primary/20" />
-                      </div>
-                      <div>
-                        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-                          Nueva conciliación
-                        </h1>
-                        <p className="text-slate-500 text-[14px] font-medium mt-1">
-                          Elige el proceso y define la fecha operativa para continuar.
-                        </p>
-                      </div>
-                    </div>
+            <div className="bg-white border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.04)] relative overflow-hidden shrink-0 z-20 rounded-t-2xl">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary to-secondary opacity-70"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.03] rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+              
+              <div className="px-6 md:px-8 py-4 flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-[10px] bg-primary/5 border border-primary/20 flex items-center justify-center text-primary shadow-sm ring-1 ring-primary/10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-white/40"></div>
+                    <GitMerge size={20} className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.05)]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-primary tracking-widest uppercase mb-0.5">Nuevo Proceso</span>
+                    <h1 className="text-[16px] font-bold text-slate-800 tracking-tight flex items-center gap-2 leading-tight">
+                      Configurar conciliación
+                    </h1>
                   </div>
                 </div>
+                
                 <button 
                   onClick={onClose}
-                  className="absolute top-6 right-8 p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative z-10"
+                  className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors relative z-10 shadow-sm border border-transparent hover:border-rose-100"
                 >
-                  <X size={20} />
+                  <X size={16} />
                 </button>
               </div>
             </div>
@@ -261,7 +249,6 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
             <div className="flex-1 overflow-y-auto w-full bg-slate-50/50">
               <div className="max-w-6xl mx-auto h-full relative">
                 <div className="p-8 pb-10 grid grid-cols-1 md:grid-cols-12 gap-10 items-center relative h-full">
-                  <div className="absolute left-[58%] top-0 bottom-0 w-px bg-gradient-to-b from-primary/10 via-primary/[0.05] to-transparent pointer-events-none hidden md:block"></div>
                   
                   {/* Left Column: Inputs */}
                   <div className="md:col-span-6 relative mt-6 md:mt-0">
@@ -330,9 +317,6 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
 
                   {/* Right Column: Informational Summary */}
                   <div className="md:col-span-6 bg-white relative rounded-3xl border border-slate-100 p-6 shadow-sm shadow-slate-200/50">
-                    <div className="hidden md:flex absolute -left-7 top-1/2 -translate-y-1/2 w-4 h-[1px] bg-slate-200">
-                      <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 border-t border-r border-slate-300 rotate-45 bg-white"></div>
-                    </div>
                     
                     <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
                       <h3 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
