@@ -44,22 +44,25 @@ export function Sidebar({ isCollapsed, onToggle, currentView, onNavigate }: Side
   return (
     <aside 
       onClick={onToggle}
-      className={`bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out z-20 cursor-pointer ${
+      className={`bg-gradient-to-b from-primary to-primary-dark border-r border-slate-800/50 flex flex-col transition-all duration-300 ease-in-out z-20 cursor-pointer relative overflow-hidden ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}
     >
-      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 shrink-0">
+      {/* Decorative shape */}
+      <div className="absolute left-0 top-0 w-48 h-48 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/3 z-0 pointer-events-none"></div>
+
+      <div className="h-16 flex items-center justify-between px-4 border-b border-white/5 shrink-0 z-10 relative">
         {!isCollapsed && (
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-lg leading-none">C</span>
+            <div className="w-8 h-8 rounded bg-secondary flex items-center justify-center shrink-0">
+              <span className="text-primary-dark font-bold text-lg leading-none">C</span>
             </div>
-            <span className="font-bold text-primary text-xl tracking-tight whitespace-nowrap">Concilia 2.0</span>
+            <span className="font-bold text-white text-xl tracking-tight whitespace-nowrap">Concilia 2.0</span>
           </div>
         )}
         {isCollapsed && (
-          <div className="w-8 h-8 mx-auto rounded bg-primary flex items-center justify-center shrink-0">
-             <span className="text-white font-bold text-lg leading-none">C</span>
+          <div className="w-8 h-8 mx-auto rounded bg-secondary flex items-center justify-center shrink-0">
+             <span className="text-primary-dark font-bold text-lg leading-none">C</span>
           </div>
         )}
         
@@ -68,22 +71,22 @@ export function Sidebar({ isCollapsed, onToggle, currentView, onNavigate }: Side
             e.stopPropagation();
             onToggle();
           }}
-          className={`text-slate-400 hover:text-slate-600 transition-colors ${isCollapsed ? 'absolute -right-3 top-20 bg-white border border-slate-200 rounded-full p-1 shadow-sm' : ''}`}
+          className={`text-slate-500 hover:text-white transition-colors ${isCollapsed ? 'absolute -right-3 top-20 bg-primary border border-slate-800/50 rounded-full p-1 shadow-sm' : ''}`}
           title={isCollapsed ? "Expandir" : "Colapsar"}
         >
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-4 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto py-4 scrollbar-thin z-10 relative">
         {menuGroups.map((group, idx) => (
           <div key={idx} className="mb-6" onClick={(e) => e.stopPropagation()}>
             {!isCollapsed ? (
-              <h3 className="px-5 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <h3 className="px-5 mb-2 text-[11px] font-bold text-slate-400 capitalize tracking-wider">
                 {group.title}
               </h3>
             ) : (
-                <div className="border-t border-slate-100 my-2 mx-4" />
+                <div className="border-t border-white/5 my-2 mx-4" />
             )}
             
             <ul className="space-y-1">
@@ -99,8 +102,8 @@ export function Sidebar({ isCollapsed, onToggle, currentView, onNavigate }: Side
                       }}
                       className={`w-full flex items-center gap-3 px-5 py-2.5 transition-colors relative group
                         ${isActive 
-                          ? 'text-primary bg-slate-50 font-medium' 
-                          : 'text-slate-600 hover:text-primary hover:bg-slate-50'
+                          ? 'text-white bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' 
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
                         }
                       `}
                     >
@@ -108,7 +111,7 @@ export function Sidebar({ isCollapsed, onToggle, currentView, onNavigate }: Side
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-secondary rounded-r" />
                       )}
                       
-                      <Icon size={20} className={`shrink-0 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-primary'}`} />
+                      <Icon size={20} className={`shrink-0 ${isActive ? 'text-secondary' : 'text-slate-400 group-hover:text-slate-200'}`} />
                       
                       {!isCollapsed && (
                         <span className="truncate">{item.label}</span>
