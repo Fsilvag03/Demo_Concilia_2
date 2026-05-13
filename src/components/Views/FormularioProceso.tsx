@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX
+  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -33,6 +33,7 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
 
   const [fase, setFase] = useState<'ingesta' | 'preparacion_loading' | 'preparacion_results'>('ingesta');
   const [prepResult, setPrepResult] = useState<any>(null);
+  const [selectedRuleCategory, setSelectedRuleCategory] = useState<Record<string, string | null>>({});
 
   // Mock data for the selected process
   const procesos = [
@@ -104,7 +105,7 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
     const mockErrors = hasError || hasPendingRequired ? [
       {
         id: 1,
-        bloque: 'Normalización',
+        bloque: 'validaciones',
         fuente: fuentes.find(f => f.estado === 'error')?.name || 'Core Bancario',
         reglaOControl: 'Validación de estructura',
         registrosAfectados: null,
@@ -115,9 +116,9 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
     ] : hasWarn ? [
       {
         id: 1,
-        bloque: 'Control de Consistencia',
+        bloque: 'consistencia',
         fuente: fuentes.find(f => f.estado === 'cargada_advertencias')?.name || 'Adquirencia',
-        reglaOControl: 'Campos Opcionales',
+        reglaOControl: 'Campos opcionales',
         registrosAfectados: 15,
         motivo: 'Faltan campos no críticos en la estructura.',
         severidad: 'baja',
@@ -134,7 +135,50 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
       normalizacionesAplicadas: mockErrors.some(e => e.bloqueante) ? 0 : 4,
       transformacionesEjecutadas: mockErrors.some(e => e.bloqueante) ? 0 : 2,
       controlesEjecutados: mockErrors.some(e => e.bloqueante) ? 1 : 5,
-      detalles: mockErrors
+      detalles: mockErrors,
+      fuentesResultados: fuentes.filter(f => f.estado !== 'pendiente').map(f => {
+        const isFuenteError = f.estado === 'error';
+        const isFuenteWarn = f.estado === 'cargada_advertencias';
+        const leidos = f.registrosLeidos || 0;
+        const totalEjecutadasRule = isFuenteError ? 0 : 1; // Simplify logic just for mock
+
+        return {
+          id: f.id,
+          name: f.name,
+          archivo: f.archivo,
+          estado: isFuenteError ? 'error' : isFuenteWarn ? 'advertencia' : 'ok',
+          detallesFuente: mockErrors.filter(e => e.fuente === f.name),
+          resumenEjecucion: {
+            evaluados: leidos,
+            correctos: isFuenteError ? 0 : leidos - (isFuenteWarn ? 15 : 0),
+            observaciones: isFuenteWarn ? 15 : 0,
+            error: isFuenteError ? leidos : 0,
+            excluidos: isFuenteError ? leidos : (isFuenteWarn ? 15 : 0)
+          },
+          resumenReglas: {
+            validaciones: { total: 5, ejecutadas: isFuenteError ? 1 : 5, aplicadas: [
+              { nombre: 'Validación de estructura', estado: isFuenteError ? 'error' : 'ok', detalle: isFuenteError ? 'El archivo está corrupto o falta el campo "Crédito".' : 'La estructura del archivo coincide con el formato esperado.' },
+              { nombre: 'Comprobación de tipos', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Los tipos de datos de las columnas numéricas y de fecha han sido validados.' },
+              { nombre: 'Campos requeridos', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Se validó la existencia de todos los campos marcados como obligatorios.' },
+              { nombre: 'Longitud de campos', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Las cadenas de texto y valores en campos coinciden con longitudes requeridas.' },
+              { nombre: 'Formato UTF-8', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'La codificación del archivo se procesa correctamente.' },
+            ]},
+            normalizaciones: { total: 3, ejecutadas: isFuenteError ? 0 : 3, aplicadas: [
+              { nombre: 'Normalización de moneda', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Se unificaron los símbolos y formatos de moneda.' },
+              { nombre: 'Formato de fecha', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Las fechas fueron transformadas al estándar de la aplicación (YYYY-MM-DD).' },
+              { nombre: 'Limpieza de espacios', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Se eliminaron espacios vacíos en descripciones.' },
+            ]},
+            transformaciones: { total: 2, ejecutadas: isFuenteError ? 0 : 2, aplicadas: [
+              { nombre: 'Generación de ID único', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Se generaron hashes únicos para cada registro basados en sus campos clave.' },
+              { nombre: 'Columna de agrupamiento', estado: isFuenteError ? 'pendiente' : 'ok', detalle: 'Columna calculada para clasificación del registro generada.' },
+            ]},
+            consistencia: { total: 2, ejecutadas: isFuenteError ? 0 : (isFuenteWarn ? 1 : 2), aplicadas: [
+              { nombre: 'Campos opcionales', estado: isFuenteWarn ? 'advertencia' : isFuenteError ? 'pendiente' : 'ok', detalle: isFuenteWarn ? 'Faltan campos no críticos en la estructura, pero el proceso puede continuar.' : 'Los campos opcionales requeridos para cruces avanzados están presentes.' },
+              { nombre: 'Balances numéricos', estado: isFuenteWarn ? 'pendiente' : isFuenteError ? 'pendiente' : 'ok', detalle: 'No se dectectan montos sin sentido numérico.' },
+            ]},
+          }
+        };
+      })
     };
 
     setTimeout(() => {
@@ -594,68 +638,140 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                 </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Registros Leídos</div>
-                  <div className="text-2xl font-black text-slate-800">{prepResult.registrosLeidos.toLocaleString()}</div>
-                </div>
-                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/3"></div>
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Incluidos</div>
-                  <div className="text-2xl font-black text-emerald-600">{prepResult.registrosIncluidos.toLocaleString()}</div>
-                </div>
-                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/3"></div>
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Excluidos</div>
-                  <div className="text-2xl font-black text-rose-600">{prepResult.registrosExcluidos.toLocaleString()}</div>
-                </div>
-                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Reglas Aplicadas</div>
-                  <div className="text-xl font-bold text-slate-700 flex items-center gap-1.5"><span className="text-slate-400">{prepResult.validacionesEjecutadas + prepResult.normalizacionesAplicadas + prepResult.transformacionesEjecutadas + prepResult.controlesEjecutados}</span> totales</div>
-                </div>
-              </div>
-
-              {/* Errors/Observations detail */}
-              {prepResult.detalles && prepResult.detalles.length > 0 && (
-                <div className="bg-white border text-left rounded-2xl shadow-sm border-slate-200 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
-                      <AlertTriangle size={18} className={prepResult.detalles.some((e: any) => e.bloqueante) ? "text-rose-500" : "text-amber-500"}/>
-                      Detalle de Errores y Observaciones
-                    </h3>
-                  </div>
-                  <div className="divide-y divide-slate-100">
-                    {prepResult.detalles.map((detalle: any, idx: number) => (
-                      <div key={idx} className="p-6 hover:bg-slate-50 transition-colors">
-                        <div className="flex flex-col md:flex-row gap-6">
-                           <div className="w-full md:w-64 shrink-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded ${detalle.bloqueante ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                                  {detalle.bloqueante ? 'Bloqueante' : 'Advertencia'}
-                                </span>
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{detalle.bloque}</span>
-                              </div>
-                              <div className="text-[14px] font-bold text-slate-800 mb-1">{detalle.fuente}</div>
-                              <div className="text-[13px] text-slate-500">Regla: <span className="font-medium text-slate-700">{detalle.reglaOControl}</span></div>
-                           </div>
-                           <div className="flex-1">
-                              <div className="text-[14px] leading-relaxed text-slate-700 mb-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                                {detalle.motivo}
-                              </div>
-                              {detalle.registrosAfectados && (
-                                <div className="text-[12px] font-medium text-slate-500 flex items-center gap-1.5">
-                                  <FileX size={14} className="text-slate-400" />
-                                  <strong className="text-slate-800">{detalle.registrosAfectados}</strong> registros afectados
-                                </div>
-                              )}
-                           </div>
+              {/* Fuentes Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+                {prepResult.fuentesResultados?.map((fuente: any) => (
+                  <div key={fuente.id} className="bg-white border flex flex-col text-left rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+                    {/* Header Fuente */}
+                    <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
+                      <div className={`p-1.5 rounded-full ${fuente.estado === 'error' ? 'bg-rose-100 text-rose-600' : fuente.estado === 'advertencia' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                        {fuente.estado === 'error' ? <FileX size={18} /> : fuente.estado === 'advertencia' ? <AlertTriangle size={18} /> : <FileCheck size={18} />}
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-bold leading-none mb-1 text-slate-800">{fuente.name}</h3>
+                        <p className="text-[11px] text-slate-500">{fuente.archivo}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Resumen Ejecución */}
+                    <div className="p-4 border-b border-slate-100 bg-white">
+                      <h4 className="text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Resumen de Ejecución</h4>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex-1 flex flex-col p-2 bg-slate-50 rounded-lg border border-slate-100 items-center justify-center text-center">
+                          <span className="text-[9px] uppercase font-bold text-slate-500 mb-0.5">Evaluados</span>
+                          <span className="text-[14px] font-bold text-slate-700 leading-none">{fuente.resumenEjecucion.evaluados.toLocaleString()}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col p-2 bg-emerald-50 rounded-lg border border-emerald-100/50 items-center justify-center text-center">
+                          <span className="text-[9px] uppercase font-bold text-emerald-600 mb-0.5">Correctos</span>
+                          <span className="text-[14px] font-bold text-emerald-600 leading-none">{fuente.resumenEjecucion.correctos.toLocaleString()}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col p-2 bg-amber-50 rounded-lg border border-amber-100/50 items-center justify-center text-center">
+                          <span className="text-[9px] uppercase font-bold text-amber-600 mb-0.5">Obs.</span>
+                          <span className="text-[14px] font-bold text-amber-500 leading-none">{fuente.resumenEjecucion.observaciones.toLocaleString()}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col p-2 bg-rose-50 rounded-lg border border-rose-100/50 items-center justify-center text-center">
+                          <span className="text-[9px] uppercase font-bold text-rose-500 mb-0.5">Errores</span>
+                          <span className="text-[14px] font-bold text-rose-500 leading-none">{fuente.resumenEjecucion.error.toLocaleString()}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col p-2 bg-indigo-50 rounded-lg border border-indigo-100/50 items-center justify-center text-center">
+                          <span className="text-[9px] uppercase font-bold text-indigo-500 mb-0.5">Excluidos</span>
+                          <span className="text-[14px] font-bold text-indigo-500 leading-none">{fuente.resumenEjecucion.excluidos.toLocaleString()}</span>
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Resumen Reglas */}
+                    <div className="p-5 border-b border-slate-100 bg-slate-50/30">
+                      <h4 className="text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center justify-between">
+                        Reglas Aplicadas
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                          {Object.values(fuente.resumenReglas).reduce((acc: any, val: any) => acc + val.ejecutadas, 0)} totales
+                        </span>
+                      </h4>
+                      <div className="space-y-2">
+                        {Object.entries(fuente.resumenReglas).map(([key, data]: [string, any]) => {
+                          const isSelected = selectedRuleCategory[fuente.id] === key;
+                          return (
+                            <button
+                               key={key} 
+                               onClick={() => setSelectedRuleCategory(prev => ({ ...prev, [fuente.id]: isSelected ? null : key }))}
+                               className={`w-full flex justify-between items-center px-3 py-2 rounded-lg border transition-all text-left group ${isSelected ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'}`}
+                            >
+                              <span className={`text-[12px] font-bold capitalize transition-colors ${isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-slate-800'}`}>{key}</span>
+                              <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+                                <span className={data.ejecutadas < data.total ? "text-amber-600 font-bold" : "text-emerald-600 font-bold"}>{data.ejecutadas}</span>
+                                <span className="text-slate-300">/</span>
+                                <span>{data.total}</span>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Detalle de Reglas (Conditional) */}
+                    <div className="p-5 bg-white flex-1 flex flex-col">
+                       {selectedRuleCategory[fuente.id] ? (
+                          <div className="animate-in fade-in duration-300">
+                             <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                Detalle de {selectedRuleCategory[fuente.id]}
+                                <div className="h-px bg-slate-100 flex-1"></div>
+                             </h5>
+                             <ul className="space-y-3">
+                               {fuente.resumenReglas[selectedRuleCategory[fuente.id]].aplicadas.map((regla: any, i: number) => (
+                                 <li key={i} className="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                                   <div className="flex items-center gap-2">
+                                      {regla.estado === 'error' ? <X size={14} className="text-rose-500 shrink-0"/> :
+                                       regla.estado === 'advertencia' ? <AlertTriangle size={14} className="text-amber-500 shrink-0"/> :
+                                       regla.estado === 'pendiente' ? <div className="w-1.5 h-1.5 m-1 rounded-full bg-slate-300 shrink-0"></div> :
+                                       <Check size={14} className="text-emerald-500 shrink-0"/>}
+                                      <span className={`text-[12px] font-bold ${regla.estado === 'pendiente' ? 'text-slate-400' : 'text-slate-700'}`}>{regla.nombre}</span>
+                                   </div>
+                                   {regla.detalle && (
+                                     <p className="text-[11px] text-slate-500 pl-6 leading-relaxed">
+                                       {regla.detalle}
+                                     </p>
+                                   )}
+                                 </li>
+                               ))}
+                             </ul>
+                          </div>
+                       ) : (
+                          <div className="animate-in fade-in duration-300 h-full flex flex-col">
+                             <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                 Alertas Detección
+                                <div className="h-px bg-slate-100 flex-1"></div>
+                             </h5>
+                             
+                             {fuente.detallesFuente && fuente.detallesFuente.length > 0 ? (
+                               <div className="space-y-3">
+                                 {fuente.detallesFuente.map((detalle: any, idx: number) => (
+                                   <div key={idx} className={`p-3 rounded-xl border ${detalle.bloqueante ? 'bg-rose-50 border-rose-100' : 'bg-amber-50 border-amber-100'}`}>
+                                     <div className="flex justify-between items-start mb-1 gap-2">
+                                       <span className="text-[12px] font-bold text-slate-800">{detalle.reglaOControl}</span>
+                                       <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded shrink-0 ${detalle.bloqueante ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                                          {detalle.bloqueante ? 'Error' : 'Aviso'}
+                                       </span>
+                                     </div>
+                                     <p className="text-[11px] text-slate-600 mt-1.5 leading-relaxed">{detalle.motivo}</p>
+                                   </div>
+                                 ))}
+                               </div>
+                             ) : (
+                               <div className="h-full min-h-[120px] flex flex-col items-center justify-center text-center p-4 bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
+                                  <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-2 shadow-sm text-emerald-500">
+                                    <CheckCircle2 size={16} />
+                                  </div>
+                                  <span className="text-[12px] font-bold text-slate-700">Sin alertas detectadas</span>
+                                  <span className="text-[11px] text-slate-500 mt-1 max-w-[200px]">Haz clic en cualquier categoría arriba para examinar el detalle de las reglas aplicadas.</span>
+                               </div>
+                             )}
+                          </div>
+                       )}
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           )}
 
