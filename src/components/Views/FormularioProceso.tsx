@@ -31,6 +31,9 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
   const [procesoId, setProcesoId] = useState(procesoParams?.procesoId || '1');
   const [fechaOperativa, setFechaOperativa] = useState(procesoParams?.fecha || new Date().toISOString().split('T')[0]);
 
+  const [fase, setFase] = useState<'ingesta' | 'preparacion_loading' | 'preparacion_results'>('ingesta');
+  const [prepResult, setPrepResult] = useState<any>(null);
+
   // Mock data for the selected process
   const procesos = [
     { id: '1', name: 'Conciliación Bancaria Local', version: 'v2.4.1 (Publicada)', baseFecha: 'Día actual' },
@@ -87,6 +90,57 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
       }
       return f;
     }));
+  };
+
+  const handleStartPreparacion = () => {
+    setFase('preparacion_loading');
+    
+    // Determine result based on sources state
+    const hasError = fuentes.some(f => f.estado === 'error');
+    const hasWarn = fuentes.some(f => f.estado === 'cargada_advertencias');
+    const hasPendingRequired = fuentes.some(f => f.required && f.estado === 'pendiente');
+
+    const totalLeidos = fuentes.reduce((acc, f) => acc + (f.registrosLeidos || 0), 0);
+    const mockErrors = hasError || hasPendingRequired ? [
+      {
+        id: 1,
+        bloque: 'Normalización',
+        fuente: fuentes.find(f => f.estado === 'error')?.name || 'Core Bancario',
+        reglaOControl: 'Validación de estructura',
+        registrosAfectados: null,
+        motivo: 'El archivo está corrupto o falta el campo "Crédito".',
+        severidad: 'alta',
+        bloqueante: true
+      }
+    ] : hasWarn ? [
+      {
+        id: 1,
+        bloque: 'Control de Consistencia',
+        fuente: fuentes.find(f => f.estado === 'cargada_advertencias')?.name || 'Adquirencia',
+        reglaOControl: 'Campos Opcionales',
+        registrosAfectados: 15,
+        motivo: 'Faltan campos no críticos en la estructura.',
+        severidad: 'baja',
+        bloqueante: false
+      }
+    ] : [];
+
+    const mockResult = {
+      estado: mockErrors.some(e => e.bloqueante) ? 'Preparación con errores' : mockErrors.length > 0 ? 'Preparación con observaciones' : 'Listo para conciliar',
+      registrosLeidos: totalLeidos,
+      registrosIncluidos: mockErrors.some(e => e.bloqueante) ? 0 : totalLeidos - (hasWarn ? 15 : 0),
+      registrosExcluidos: mockErrors.some(e => e.bloqueante) ? totalLeidos : (hasWarn ? 15 : 0),
+      validacionesEjecutadas: 18,
+      normalizacionesAplicadas: mockErrors.some(e => e.bloqueante) ? 0 : 4,
+      transformacionesEjecutadas: mockErrors.some(e => e.bloqueante) ? 0 : 2,
+      controlesEjecutados: mockErrors.some(e => e.bloqueante) ? 1 : 5,
+      detalles: mockErrors
+    };
+
+    setTimeout(() => {
+      setPrepResult(mockResult);
+      setFase('preparacion_results');
+    }, 2500);
   };
 
   const processIdString = useMemo(() => `CONC-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`, []);
@@ -339,12 +393,18 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="px-3 py-1 rounded border border-primary-dark text-slate-300 text-[11px] font-bold tracking-widest uppercase bg-primary-dark/50 shadow-sm">
-                    Fase 1: Ingesta
+                    {fase === 'ingesta' ? 'Fase 1: Ingesta' : fase.startsWith('preparacion') ? 'Fase 2: Preparación' : 'Fase 3: Conciliación'}
                   </div>
-                  {estadoGeneralIngesta.allowed && (
+                  {fase === 'ingesta' && estadoGeneralIngesta.allowed && (
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded border border-secondary/30 bg-secondary/10 text-secondary text-[11px] font-bold tracking-widest uppercase shadow-sm">
                       <CheckCircle2 size={12} />
                       Listo para preparación
+                    </div>
+                  )}
+                  {fase.startsWith('preparacion') && prepResult && (
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded border text-[11px] font-bold tracking-widest uppercase shadow-sm ${prepResult.estado === 'Listo para conciliar' ? 'border-secondary/30 bg-secondary/10 text-secondary' : prepResult.estado === 'Preparación con observaciones' ? 'border-amber-500/30 bg-amber-500/10 text-amber-500' : 'border-rose-500/30 bg-rose-500/10 text-rose-500'}`}>
+                      {prepResult.estado === 'Listo para conciliar' ? <CheckCircle2 size={12} /> : prepResult.estado === 'Preparación con observaciones' ? <AlertTriangle size={12} /> : <AlertCircle size={12} />}
+                      {prepResult.estado}
                     </div>
                   )}
                 </div>
@@ -375,9 +435,9 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
             {/* Fases / Stepper Visual */}
             <div className="mt-8 pt-6 border-t border-slate-700/50 flex items-center justify-between gap-2 md:gap-4 w-full relative z-10 max-w-5xl">
               {[
-                { id: 1, name: 'Ingesta de Datos', state: 'current' },
-                { id: 2, name: 'Preparación', state: 'pending' },
-                { id: 3, name: 'Reglas y Cruces', state: 'pending' },
+                { id: 1, name: 'Ingesta de Datos', state: fase === 'ingesta' ? 'current' : 'completed' },
+                { id: 2, name: 'Preparación', state: fase.startsWith('preparacion') ? 'current' : fase === 'reglas_y_cruces' ? 'completed' : 'pending' },
+                { id: 3, name: 'Reglas y Cruces', state: fase === 'reglas_y_cruces' ? 'current' : 'pending' },
                 { id: 4, name: 'Resultados', state: 'pending' }
               ].map((step, idx, arr) => (
                 <React.Fragment key={step.id}>
@@ -408,128 +468,259 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
           </div>
         </div>
 
-        {/* Body Ingesta flex-1 w-full */}
-        <div className="flex-1 overflow-y-auto w-full px-8 py-8 md:px-12 relative">
+        {/* Body Area */}
+        <div className="flex-1 overflow-y-auto w-full px-8 py-8 md:px-12 relative bg-slate-50">
           
-          <div className="w-full relative z-10">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-zinc-900">Fuentes de información requeridas</h2>
-                <p className="text-[15px] text-zinc-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
+          {fase === 'ingesta' && (
+            <div className="w-full relative z-10 animate-in fade-in duration-300">
+              <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-zinc-900">Fuentes de información requeridas</h2>
+                  <p className="text-[15px] text-zinc-500 mt-1">Carga los archivos necesarios para iniciar la preparación de datos.</p>
+                </div>
+                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-600'} shadow-sm transition-colors`}>
+                  {estadoGeneralIngesta.icon}
+                  <span className="text-[14px] font-bold tracking-wide">{estadoGeneralIngesta.status}</span>
+                </div>
               </div>
-              <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${estadoGeneralIngesta.allowed ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-600'} shadow-sm transition-colors`}>
-                {estadoGeneralIngesta.icon}
-                <span className="text-[14px] font-bold tracking-wide">{estadoGeneralIngesta.status}</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {fuentes.map((fuente) => (
+                  <div key={fuente.id} className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative flex flex-col h-full group ${fuente.estado === 'cargada' ? 'border-emerald-200' : 'border-zinc-200'}`}>
+                    
+                    {/* Top info */}
+                    <div className="flex justify-between items-start mb-5">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-zinc-200 bg-zinc-50 text-zinc-600">
+                          {fuente.type === 'Excel' ? <FileSpreadsheet size={20} /> : fuente.type === 'CSV' ? <Database size={20} /> : <FileText size={20} />}
+                        </div>
+                        <div>
+                          <h4 className="text-[15px] font-bold text-zinc-800 leading-tight mb-1">{fuente.name}</h4>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${fuente.required ? 'text-zinc-700 bg-zinc-100 border border-zinc-200' : 'text-zinc-500 bg-white border border-zinc-200 border-dashed'}`}>
+                            {fuente.required ? 'Requerida' : 'Opcional'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-[13px] text-zinc-600 mb-5 border-t border-zinc-100 pt-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-zinc-500">Formato:</span>
+                        <strong className="text-zinc-800 font-medium">{fuente.type}</strong>
+                      </div>
+                      {fuente.sheetExpected && (
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-zinc-500">Hoja:</span>
+                          <strong className="text-zinc-800 font-medium max-w-[120px] truncate" title={fuente.sheetExpected}>{fuente.sheetExpected}</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Actions / Status */}
+                    <div className="mt-auto pt-2">
+                      {fuente.estado === 'pendiente' ? (
+                        <div className="border border-dashed border-zinc-300 rounded-xl p-5 bg-zinc-50 flex flex-col items-center justify-center text-center hover:bg-zinc-100 hover:border-zinc-400 transition-all duration-300 cursor-pointer relative overflow-hidden group/drop">
+                          <UploadCloud size={28} className="text-zinc-400 group-hover/drop:text-zinc-600 mb-2 transition-colors duration-300" />
+                          <span className="text-[13px] font-bold text-zinc-700 group-hover/drop:text-zinc-900">Seleccionar archivo</span>
+                          
+                          {/* Hidden dummy buttons for prototype simulation */}
+                          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2 opacity-0 group-hover/drop:opacity-100 transition-all duration-300">
+                             <div className="flex gap-2">
+                               <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'ok') }} className="px-3 py-1.5 text-[11px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded transition-colors">OK</button>
+                               <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'warn') }} className="px-3 py-1.5 text-[11px] font-bold border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded transition-colors">WARN</button>
+                               <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'error') }} className="px-3 py-1.5 text-[11px] font-bold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded transition-colors">ERR</button>
+                             </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`border rounded-xl p-4 transition-all duration-300 ${fuente.estado === 'cargada' ? 'bg-emerald-50/30 border-emerald-200' : fuente.estado === 'cargada_advertencias' ? 'bg-amber-50/30 border-amber-200' : 'bg-rose-50/30 border-rose-200'}`}>
+                          <div className="flex items-start gap-3">
+                            <div className={`shrink-0 mt-0.5 p-1 rounded-full bg-white shadow-sm border ${fuente.estado === 'cargada' ? 'text-emerald-600 border-emerald-100' : fuente.estado === 'cargada_advertencias' ? 'text-amber-600 border-amber-100' : 'text-rose-600 border-rose-100'}`}>
+                              {fuente.estado === 'cargada' ? <CheckCircle2 size={16} /> : fuente.estado === 'cargada_advertencias' ? <AlertTriangle size={16} /> : <AlertCircle size={16} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="block text-[13px] font-medium text-zinc-900 truncate" title={fuente.archivo}>{fuente.archivo}</span>
+                              <span className="block text-[12px] text-zinc-500 mt-1">
+                                {fuente.estado === 'error' ? 'Validación fallida' : <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{fuente.registrosLeidos?.toLocaleString() || 0} registros leídos</span>}
+                              </span>
+                              
+                              {fuente.mensaje && (
+                                <div className={`mt-3 text-[12px] leading-relaxed p-2.5 rounded-lg border ${fuente.estado === 'error' ? 'bg-rose-50 text-rose-800 border-rose-100' : 'bg-amber-50 text-amber-800 border-amber-100'}`}>
+                                  {fuente.mensaje}
+                                </div>
+                              )}
+                            </div>
+                            <button 
+                              onClick={() => handleSimularCarga(fuente.id, 'pendiente')}
+                              className="text-zinc-400 hover:text-zinc-800 transition-colors shrink-0 p-1.5 bg-white rounded flex items-center justify-center border border-zinc-200 shadow-sm"
+                              title="Reemplazar archivo"
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {fuentes.map((fuente) => (
-                <div key={fuente.id} className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative flex flex-col h-full group ${fuente.estado === 'cargada' ? 'border-emerald-200' : 'border-zinc-200'}`}>
-                  
-                  {/* Top info */}
-                  <div className="flex justify-between items-start mb-5">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-zinc-200 bg-zinc-50 text-zinc-600">
-                        {fuente.type === 'Excel' ? <FileSpreadsheet size={20} /> : fuente.type === 'CSV' ? <Database size={20} /> : <FileText size={20} />}
-                      </div>
-                      <div>
-                        <h4 className="text-[15px] font-bold text-zinc-800 leading-tight mb-1">{fuente.name}</h4>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${fuente.required ? 'text-zinc-700 bg-zinc-100 border border-zinc-200' : 'text-zinc-500 bg-white border border-zinc-200 border-dashed'}`}>
-                          {fuente.required ? 'Requerida' : 'Opcional'}
-                        </span>
-                      </div>
-                    </div>
+          {fase === 'preparacion_loading' && (
+            <div className="w-full h-full flex flex-col items-center justify-center animate-in fade-in duration-300 min-h-[400px]">
+              <div className="w-20 h-20 rounded-full border-4 border-slate-200 border-t-slate-800 border-r-slate-800 animate-spin mb-8 shadow-sm"></div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-3">Preparando Datos</h3>
+              <p className="text-slate-500 text-[15px] max-w-md text-center">
+                Ejecutando validaciones, normalizaciones, transformaciones y controles de consistencia...
+              </p>
+            </div>
+          )}
+
+          {fase === 'preparacion_results' && prepResult && (
+            <div className="w-full relative z-10 animate-in fade-in duration-300">
+               <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Resultados de la Preparación</h2>
+                  <p className="text-[15px] text-slate-500 mt-1">Resumen de la etapa de preparación de datos.</p>
+                </div>
+                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border shadow-sm ${
+                   prepResult.estado === 'Listo para conciliar' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 
+                   prepResult.estado === 'Preparación con observaciones' ? 'bg-amber-50 border-amber-200 text-amber-800' : 
+                   'bg-rose-50 border-rose-200 text-rose-800'
+                }`}>
+                  {prepResult.estado === 'Listo para conciliar' ? <CheckCircle2 size={18} /> : prepResult.estado === 'Preparación con observaciones' ? <AlertTriangle size={18} /> : <AlertCircle size={18} />}
+                  <span className="text-[14px] font-bold tracking-wide">{prepResult.estado}</span>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Registros Leídos</div>
+                  <div className="text-2xl font-black text-slate-800">{prepResult.registrosLeidos.toLocaleString()}</div>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/3"></div>
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Incluidos</div>
+                  <div className="text-2xl font-black text-emerald-600">{prepResult.registrosIncluidos.toLocaleString()}</div>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/3"></div>
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Excluidos</div>
+                  <div className="text-2xl font-black text-rose-600">{prepResult.registrosExcluidos.toLocaleString()}</div>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Reglas Aplicadas</div>
+                  <div className="text-xl font-bold text-slate-700 flex items-center gap-1.5"><span className="text-slate-400">{prepResult.validacionesEjecutadas + prepResult.normalizacionesAplicadas + prepResult.transformacionesEjecutadas + prepResult.controlesEjecutados}</span> totales</div>
+                </div>
+              </div>
+
+              {/* Errors/Observations detail */}
+              {prepResult.detalles && prepResult.detalles.length > 0 && (
+                <div className="bg-white border text-left rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+                      <AlertTriangle size={18} className={prepResult.detalles.some((e: any) => e.bloqueante) ? "text-rose-500" : "text-amber-500"}/>
+                      Detalle de Errores y Observaciones
+                    </h3>
                   </div>
-
-                  <div className="text-[13px] text-zinc-600 mb-5 border-t border-zinc-100 pt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-zinc-500">Formato:</span>
-                      <strong className="text-zinc-800 font-medium">{fuente.type}</strong>
-                    </div>
-                    {fuente.sheetExpected && (
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-zinc-500">Hoja:</span>
-                        <strong className="text-zinc-800 font-medium max-w-[120px] truncate" title={fuente.sheetExpected}>{fuente.sheetExpected}</strong>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload Actions / Status */}
-                  <div className="mt-auto pt-2">
-                    {fuente.estado === 'pendiente' ? (
-                      <div className="border border-dashed border-zinc-300 rounded-xl p-5 bg-zinc-50 flex flex-col items-center justify-center text-center hover:bg-zinc-100 hover:border-zinc-400 transition-all duration-300 cursor-pointer relative overflow-hidden group/drop">
-                        <UploadCloud size={28} className="text-zinc-400 group-hover/drop:text-zinc-600 mb-2 transition-colors duration-300" />
-                        <span className="text-[13px] font-bold text-zinc-700 group-hover/drop:text-zinc-900">Seleccionar archivo</span>
-                        
-                        {/* Hidden dummy buttons for prototype simulation */}
-                        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2 opacity-0 group-hover/drop:opacity-100 transition-all duration-300">
-                           <div className="flex gap-2">
-                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'ok') }} className="px-3 py-1.5 text-[11px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded transition-colors">OK</button>
-                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'warn') }} className="px-3 py-1.5 text-[11px] font-bold border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded transition-colors">WARN</button>
-                             <button onClick={(e) => { e.stopPropagation(); handleSimularCarga(fuente.id, 'error') }} className="px-3 py-1.5 text-[11px] font-bold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded transition-colors">ERR</button>
+                  <div className="divide-y divide-slate-100">
+                    {prepResult.detalles.map((detalle: any, idx: number) => (
+                      <div key={idx} className="p-6 hover:bg-slate-50 transition-colors">
+                        <div className="flex flex-col md:flex-row gap-6">
+                           <div className="w-full md:w-64 shrink-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded ${detalle.bloqueante ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                                  {detalle.bloqueante ? 'Bloqueante' : 'Advertencia'}
+                                </span>
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{detalle.bloque}</span>
+                              </div>
+                              <div className="text-[14px] font-bold text-slate-800 mb-1">{detalle.fuente}</div>
+                              <div className="text-[13px] text-slate-500">Regla: <span className="font-medium text-slate-700">{detalle.reglaOControl}</span></div>
+                           </div>
+                           <div className="flex-1">
+                              <div className="text-[14px] leading-relaxed text-slate-700 mb-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                {detalle.motivo}
+                              </div>
+                              {detalle.registrosAfectados && (
+                                <div className="text-[12px] font-medium text-slate-500 flex items-center gap-1.5">
+                                  <FileX size={14} className="text-slate-400" />
+                                  <strong className="text-slate-800">{detalle.registrosAfectados}</strong> registros afectados
+                                </div>
+                              )}
                            </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className={`border rounded-xl p-4 transition-all duration-300 ${fuente.estado === 'cargada' ? 'bg-emerald-50/30 border-emerald-200' : fuente.estado === 'cargada_advertencias' ? 'bg-amber-50/30 border-amber-200' : 'bg-rose-50/30 border-rose-200'}`}>
-                        <div className="flex items-start gap-3">
-                          <div className={`shrink-0 mt-0.5 p-1 rounded-full bg-white shadow-sm border ${fuente.estado === 'cargada' ? 'text-emerald-600 border-emerald-100' : fuente.estado === 'cargada_advertencias' ? 'text-amber-600 border-amber-100' : 'text-rose-600 border-rose-100'}`}>
-                            {fuente.estado === 'cargada' ? <CheckCircle2 size={16} /> : fuente.estado === 'cargada_advertencias' ? <AlertTriangle size={16} /> : <AlertCircle size={16} />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="block text-[13px] font-medium text-zinc-900 truncate" title={fuente.archivo}>{fuente.archivo}</span>
-                            <span className="block text-[12px] text-zinc-500 mt-1">
-                              {fuente.estado === 'error' ? 'Validación fallida' : <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{fuente.registrosLeidos?.toLocaleString() || 0} registros leídos</span>}
-                            </span>
-                            
-                            {fuente.mensaje && (
-                              <div className={`mt-3 text-[12px] leading-relaxed p-2.5 rounded-lg border ${fuente.estado === 'error' ? 'bg-rose-50 text-rose-800 border-rose-100' : 'bg-amber-50 text-amber-800 border-amber-100'}`}>
-                                {fuente.mensaje}
-                              </div>
-                            )}
-                          </div>
-                          <button 
-                            onClick={() => handleSimularCarga(fuente.id, 'pendiente')}
-                            className="text-zinc-400 hover:text-zinc-800 transition-colors shrink-0 p-1.5 bg-white rounded flex items-center justify-center border border-zinc-200 shadow-sm"
-                            title="Reemplazar archivo"
-                          >
-                            <RefreshCw size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          )}
+
         </div>
 
         {/* Refined Footer Actions - Full Width */}
-        <div className="bg-primary px-8 py-5 md:px-12 shrink-0 relative flex items-center justify-between border-t border-primary-dark">
-          <button 
-            onClick={onClose}
-            className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white bg-primary-dark/50 hover:bg-primary-dark rounded-lg transition-colors border border-slate-700 hover:border-slate-600 shadow-sm"
-          >
-            Guardar y continuar luego
-          </button>
-          
-          <button 
-            disabled={!estadoGeneralIngesta.allowed}
-            onClick={() => {
-              onClose();
-            }}
-            className={`px-8 py-3 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
-              estadoGeneralIngesta.allowed 
-                ? 'text-primary-dark bg-secondary hover:bg-secondary-dark shadow-sm cursor-pointer' 
-                : 'text-slate-500 bg-primary-dark shadow-none cursor-not-allowed border border-slate-700'
-            }`}
-          >
-            Iniciar Preparación
-            <ArrowRight size={18} className={estadoGeneralIngesta.allowed ? "text-primary-dark" : "text-slate-600"} />
-          </button>
+        <div className="bg-primary px-8 py-5 md:px-12 shrink-0 relative flex items-center justify-between border-t border-primary-dark shadow-[-0_10px_40px_-10px_rgba(0,0,0,0.5)]">
+          {fase === 'ingesta' ? (
+            <>
+              <button 
+                onClick={onClose}
+                className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white bg-primary-dark/50 hover:bg-primary-dark rounded-lg transition-colors border border-slate-700 hover:border-slate-600 shadow-sm"
+              >
+                Guardar y continuar luego
+              </button>
+              
+              <button 
+                disabled={!estadoGeneralIngesta.allowed}
+                onClick={handleStartPreparacion}
+                className={`px-8 py-3 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                  estadoGeneralIngesta.allowed 
+                    ? 'text-primary-dark bg-secondary hover:bg-secondary-dark shadow-sm cursor-pointer hover:shadow-secondary/20' 
+                    : 'text-slate-500 bg-primary-dark shadow-none cursor-not-allowed border border-slate-700'
+                }`}
+              >
+                Iniciar Preparación
+                <ArrowRight size={18} className={estadoGeneralIngesta.allowed ? "text-primary-dark" : "text-slate-600"} />
+              </button>
+            </>
+          ) : fase === 'preparacion_loading' ? (
+             <div className="w-full flex justify-end">
+               <button 
+                 disabled
+                 className="px-8 py-3 text-[14px] font-semibold rounded-lg transition-all flex items-center gap-2 text-primary-dark bg-secondary/50 shadow-sm cursor-not-allowed"
+               >
+                 Preparando...
+               </button>
+             </div>
+          ) : (
+            <>
+              <button 
+                onClick={() => setFase('ingesta')}
+                className="px-6 py-2.5 text-[14px] font-medium text-slate-300 hover:text-white bg-primary-dark/50 hover:bg-primary-dark rounded-lg transition-colors border border-slate-700 shadow-sm"
+              >
+                Volver a Ingesta
+              </button>
+              
+              <button 
+                disabled={prepResult?.estado === 'Preparación con errores'}
+                onClick={() => {
+                  /* onClose(); in real app move to conciliar */
+                }}
+                className={`px-8 py-3 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                   prepResult?.estado !== 'Preparación con errores'
+                    ? 'text-primary-dark bg-secondary hover:bg-secondary-dark shadow-sm cursor-pointer hover:shadow-secondary/20' 
+                    : 'text-slate-500 bg-primary-dark shadow-none cursor-not-allowed border border-slate-700'
+                }`}
+              >
+                Continuar a Conciliación
+                <ArrowRight size={18} className={prepResult?.estado !== 'Preparación con errores' ? "text-primary-dark" : "text-slate-600"} />
+              </button>
+            </>
+          )}
         </div>
+
       </div>
     );
   }
