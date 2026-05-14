@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Home, RefreshCw, AlertCircle, CheckSquare, 
   FileText, Shield, Settings, Users, 
-  ChevronLeft, ChevronRight, LayoutDashboard // layout dashboard as placeholder
+  ChevronLeft, ChevronRight, LayoutDashboard, GitCompare
 } from 'lucide-react';
 
 import { ViewType } from '../App';
@@ -53,16 +53,26 @@ export function Sidebar({ isCollapsed, onToggle, currentView, onNavigate }: Side
 
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/5 shrink-0 z-10 relative">
         {!isCollapsed && (
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-8 h-8 rounded bg-secondary flex items-center justify-center shrink-0">
-              <span className="text-primary-dark font-bold text-lg leading-none">C</span>
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center shrink-0 shadow-[0_0_15px_-3px_rgba(var(--color-secondary),0.4)] relative border border-secondary-dark/20">
+              <div className="absolute inset-0 bg-white/20 rounded-lg mix-blend-overlay"></div>
+              <GitCompare size={18} className="text-primary-dark relative z-10" />
             </div>
-            <span className="font-bold text-white text-xl tracking-tight whitespace-nowrap">Concilia 2.0</span>
+            <span className="font-bold text-white text-[20px] tracking-tight whitespace-nowrap flex items-baseline">
+              CONCIL
+              <span className="text-transparent bg-clip-text bg-gradient-to-br from-secondary to-secondary-dark font-black drop-shadow-[0_0_8px_rgba(var(--color-secondary),0.5)]">
+                IA
+              </span>
+              <span className="font-light text-slate-300 ml-2 tracking-widest text-[14px] uppercase mb-px">
+                Pro
+              </span>
+            </span>
           </div>
         )}
         {isCollapsed && (
-          <div className="w-8 h-8 mx-auto rounded bg-secondary flex items-center justify-center shrink-0">
-             <span className="text-primary-dark font-bold text-lg leading-none">C</span>
+          <div className="w-8 h-8 mx-auto rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center shrink-0 shadow-[0_0_15px_-3px_rgba(var(--color-secondary),0.4)] relative border border-secondary-dark/20">
+             <div className="absolute inset-0 bg-white/20 rounded-lg mix-blend-overlay"></div>
+             <GitCompare size={18} className="text-primary-dark relative z-10" />
           </div>
         )}
         

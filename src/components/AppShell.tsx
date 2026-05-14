@@ -22,7 +22,7 @@ export function AppShell({ children, currentView, subPath, onNavigate }: AppShel
         onNavigate={onNavigate}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Topbar currentView={currentView} subPath={subPath} />
+        <Topbar currentView={currentView} subPath={subPath} onNavigate={onNavigate} />
         <main className="flex-1 overflow-y-auto w-full flex flex-col relative">
           <div className="flex-1 flex flex-col min-h-full">
             {children}

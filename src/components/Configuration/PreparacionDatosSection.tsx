@@ -1821,18 +1821,10 @@ export function PreparacionDatosSection({ process, onChange }: PreparacionDatosS
         </div>
       ) : (
         <div className="animate-in slide-in-from-bottom-4 duration-500">
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div>
-              <h3 className="text-2xl font-bold text-primary mb-2">
-                Preparación de datos
-              </h3>
-              <p className="text-slate-500 text-sm max-w-2xl">
-                Configura las reglas previas que validan, normalizan y transforman los datos antes de pasar a la conciliación.
-              </p>
-              <div className="mt-4 flex items-center gap-2.5 text-sm font-medium text-slate-500 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 w-fit">
-                <Info size={16} className="text-primary" />
-                <span>Los bloques se ejecutan en secuencia, pero puedes configurarlos en cualquier orden.</span>
-              </div>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-start gap-4">
+            <div className="flex items-center gap-2.5 text-sm font-medium text-slate-500 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 w-fit">
+              <Info size={16} className="text-primary" />
+              <span>Los bloques se ejecutan en secuencia, pero puedes configurarlos en cualquier orden.</span>
             </div>
           </div>
 

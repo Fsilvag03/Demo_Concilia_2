@@ -37,7 +37,7 @@ export default function App() {
   const renderView = () => {
     switch (currentView) {
       case 'inicio': return <Inicio />;
-      case 'conciliaciones': return <Conciliaciones onNavigate={handleNavigate} onSubPathChange={setSubPath} />;
+      case 'conciliaciones': return <Conciliaciones onNavigate={handleNavigate} onSubPathChange={setSubPath} subPath={subPath} />;
       case 'diferencias': return <Diferencias />;
       case 'aprobaciones': return <Aprobaciones />;
       case 'resultados': return <Resultados />;

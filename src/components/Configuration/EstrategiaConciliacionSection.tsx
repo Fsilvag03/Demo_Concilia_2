@@ -269,14 +269,7 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
 
   return (
     <div className="max-w-5xl mx-auto animate-in fade-in duration-300 pb-12" onClick={closeMenu}>
-      {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h3 className="text-2xl font-bold text-primary mb-2">Estrategia de conciliación</h3>
-          <p className="text-slate-500 text-sm max-w-2xl">
-            Define el orden y los criterios con los que se cruzarán las fuentes.
-          </p>
-        </div>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-end gap-4">
         <button 
           onClick={handleAddStep}
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark text-white text-[13px] font-bold rounded-xl shadow-sm transition-colors shrink-0"

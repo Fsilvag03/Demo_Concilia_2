@@ -1,12 +1,14 @@
 import React from 'react';
 import { Bell, HelpCircle, ChevronRight, Server } from 'lucide-react';
+import { ViewType } from '../App';
 
 interface TopbarProps {
   currentView?: string;
   subPath?: string | null;
+  onNavigate?: (view: string) => void;
 }
 
-export function Topbar({ currentView = 'inicio', subPath }: TopbarProps) {
+export function Topbar({ currentView = 'inicio', subPath, onNavigate }: TopbarProps) {
   const viewLabels: Record<string, string> = {
     inicio: 'Inicio',
     conciliaciones: 'Conciliaciones',
@@ -22,11 +24,17 @@ export function Topbar({ currentView = 'inicio', subPath }: TopbarProps) {
     <header className="relative h-16 bg-white flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary"></div>
       <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500 uppercase tracking-wider relative z-10">
-        <span className="text-primary-dark">{viewLabels[currentView] || 'Inicio'}</span>
+        <button 
+          onClick={() => onNavigate && onNavigate(currentView)}
+          className={`transition-colors ${subPath ? 'hover:text-primary cursor-pointer' : 'text-primary-dark cursor-default'}`}
+          disabled={!subPath}
+        >
+          {viewLabels[currentView]?.toUpperCase() || 'INICIO'}
+        </button>
         {subPath && (
           <>
             <ChevronRight size={14} className="text-slate-400" />
-            <span className="text-secondary-dark">{subPath}</span>
+            <span className="text-secondary-dark">{subPath.toUpperCase()}</span>
           </>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   RefreshCw, Plus, Search, Filter, 
   Settings2, Database, Zap, History,
@@ -12,6 +12,7 @@ import { FormularioProceso } from './FormularioProceso';
 interface ConciliacionesProps {
   onNavigate?: (view: ViewType) => void;
   onSubPathChange?: (path: string | null) => void;
+  subPath?: string | null;
 }
 
 const procesos = [
@@ -21,9 +22,15 @@ const procesos = [
   { id: 4, name: 'Pagos Proveedores Exterior', status: 'Pausado', lastRun: 'Ayer 18:00 PM', progress: 0, color: 'rose' },
 ];
 
-export function Conciliaciones({ onNavigate, onSubPathChange }: ConciliacionesProps) {
+export function Conciliaciones({ onNavigate, onSubPathChange, subPath }: ConciliacionesProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeProceso, setActiveProceso] = useState<{procesoId: string, fecha: string} | null>(null);
+
+  useEffect(() => {
+    if (!subPath) {
+      setActiveProceso(null);
+    }
+  }, [subPath]);
 
   const handleOpenProceso = (procesoId: string, fecha: string) => {
     setActiveProceso({procesoId, fecha});

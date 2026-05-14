@@ -62,13 +62,6 @@ export const ResultadosSalidasSection: React.FC<ResultadosSalidasSectionProps> =
 
   return (
     <div className="max-w-[900px] mx-auto space-y-8 pb-12">
-      <div className="mb-6">
-        <h3 className="text-[22px] font-bold text-slate-800 mb-2">Resultados y salidas</h3>
-        <p className="text-[13.5px] text-slate-500 max-w-3xl leading-relaxed">
-          Configura los resúmenes, reportes y archivos que se generarán después de conciliar. Define qué verá el usuario en pantalla y qué archivos quedarán disponibles extraídos del sistema.
-        </p>
-      </div>
-
       {!editingOutput ? (
         <>
           {/* Bloque 1: Resumen de conciliación */}

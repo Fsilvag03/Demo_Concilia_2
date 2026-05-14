@@ -13,17 +13,6 @@ export function DatosProcesoSection({
 }: DatosProcesoSectionProps) {
   return (
     <div className="max-w-4xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="mb-8">
-        <h3 className="text-2xl font-bold text-primary mb-2">
-          Datos del proceso
-        </h3>
-        <p className="text-slate-500 text-sm max-w-2xl">
-          Define la información funcional, alcance operativo y responsables
-          del proceso conciliatorio.
-        </p>
-      </div>
-
       <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden divide-y divide-slate-100">
         {/* Identificación */}
         <div className="flex flex-col md:flex-row gap-6 p-6">

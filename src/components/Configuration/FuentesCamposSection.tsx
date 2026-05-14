@@ -513,20 +513,7 @@ export function FuentesCamposSection({
 
   return (
     <div className="max-w-4xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h3 className="text-2xl font-bold text-primary mb-2">
-            Fuentes y campos
-          </h3>
-          <p className="text-slate-500 text-sm max-w-2xl">
-            Registra los insumos que participan en el proceso y mapea su estructura hacia el modelo estándar de conciliación.
-          </p>
-          <div className="mt-4 flex items-center gap-2.5 text-sm font-medium text-slate-500 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 w-fit">
-            <Info size={16} className="text-primary" />
-            <span>No determines aquí la lógica de cruce, solo el inventario de datos.</span>
-          </div>
-        </div>
+      <div className="mb-8 flex flex-col sm:flex-row justify-end gap-4">
         <button className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">
           <Plus size={16} />
           Nueva fuente

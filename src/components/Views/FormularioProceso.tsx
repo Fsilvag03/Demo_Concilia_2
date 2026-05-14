@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight, Layers, GitMerge
+  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight, Layers, GitMerge, Rocket, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -218,20 +218,23 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
   const content = (
           <div className="w-full max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 rounded-2xl shadow-2xl relative">
             {/* Header */}
-            <div className="bg-white border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.04)] relative overflow-hidden shrink-0 z-20 rounded-t-2xl">
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary to-secondary opacity-70"></div>
-              <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.03] rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+            <div className="bg-white border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.04)] relative shrink-0 z-20 rounded-t-2xl">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary to-secondary rounded-t-2xl z-20"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.03] rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none overflow-hidden"></div>
               
-              <div className="px-6 md:px-8 py-4 flex items-center justify-between relative z-10">
+              <div className="px-6 md:px-8 py-4 pt-5 flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-[10px] bg-primary/5 border border-primary/20 flex items-center justify-center text-primary shadow-sm ring-1 ring-primary/10 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-white/40"></div>
-                    <GitMerge size={20} className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.05)]" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 flex items-center justify-center shadow-sm relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-primary/5 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative flex items-center justify-center">
+                        <Zap size={22} className="text-secondary absolute opacity-30 blur-[2px] translate-x-0.5 translate-y-0.5" />
+                        <Rocket size={22} className="text-primary relative z-10 drop-shadow-sm" />
+                    </div>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-primary tracking-widest uppercase mb-0.5">Nuevo Proceso</span>
-                    <h1 className="text-[16px] font-bold text-slate-800 tracking-tight flex items-center gap-2 leading-tight">
-                      Configurar conciliación
+                    <span className="text-[10px] font-bold text-primary tracking-widest uppercase mb-0.5">Creación de Proceso</span>
+                    <h1 className="text-[18px] font-extrabold text-slate-800 tracking-tight flex items-center gap-2 leading-tight">
+                      Iniciar Nuevo Proceso
                     </h1>
                   </div>
                 </div>

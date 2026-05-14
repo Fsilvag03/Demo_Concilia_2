@@ -33,19 +33,20 @@ type SectionId =
 interface Section {
   id: SectionId;
   label: string;
+  subtitle: string;
   icon: React.ElementType;
   status: 'complete' | 'incomplete' | 'not_started' | 'locked';
 }
 
 const sections: Section[] = [
-  { id: 'resumen', label: 'Resumen', icon: FileText, status: 'complete' },
-  { id: 'datos', label: 'Datos del proceso', icon: Info, status: 'complete' },
-  { id: 'fuentes', label: 'Fuentes y campos', icon: Database, status: 'incomplete' },
-  { id: 'preparacion', label: 'Preparación de datos', icon: Wand2, status: 'not_started' },
-  { id: 'estrategia', label: 'Estrategia de conciliación', icon: GitMerge, status: 'not_started' },
-  { id: 'diferencias', label: 'Diferencias', icon: FileWarning, status: 'not_started' },
-  { id: 'resultados', label: 'Resultados y salidas', icon: ArrowRightSquare, status: 'not_started' },
-  { id: 'publicacion', label: 'Publicación', icon: UploadCloud, status: 'not_started' }
+  { id: 'resumen', label: 'Resumen', subtitle: 'Vista general del estado de configuración del proceso conciliatorio.', icon: FileText, status: 'complete' },
+  { id: 'datos', label: 'Datos del proceso', subtitle: 'Define la información funcional, alcance operativo y responsables del proceso conciliatorio.', icon: Info, status: 'complete' },
+  { id: 'fuentes', label: 'Fuentes y campos', subtitle: 'Registra los insumos que participan en el proceso y mapea su estructura hacia el modelo estándar.', icon: Database, status: 'incomplete' },
+  { id: 'preparacion', label: 'Preparación de datos', subtitle: 'Configura las reglas previas que validan, normalizan y transforman los datos.', icon: Wand2, status: 'not_started' },
+  { id: 'estrategia', label: 'Estrategia de conciliación', subtitle: 'Define el orden y los criterios con los que se cruzarán las fuentes.', icon: GitMerge, status: 'not_started' },
+  { id: 'diferencias', label: 'Diferencias y aprobaciones', subtitle: 'Define cómo se atienden las diferencias y cuándo requieren aprobación.', icon: FileWarning, status: 'not_started' },
+  { id: 'resultados', label: 'Resultados y salidas', subtitle: 'Configura los resúmenes, reportes y archivos que se generarán después de conciliar.', icon: ArrowRightSquare, status: 'not_started' },
+  { id: 'publicacion', label: 'Publicación', subtitle: 'Revisa la configuración del proceso y publícala para que pueda ser usada en la operativa.', icon: UploadCloud, status: 'not_started' }
 ];
 
 export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process, onClose }) => {
@@ -98,36 +99,33 @@ export const ProcessConfigModal: React.FC<ProcessConfigModalProps> = ({ process,
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="h-20 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
+        <div className="min-h-[5.5rem] py-3 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
           <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 hidden md:flex">
+               {React.createElement(sections.find(s => s.id === activeSection)?.icon || Info, { size: 24, className: "text-primary/70" })}
+            </div>
             <div>
-              <h2 className="text-xl font-bold text-primary tracking-tight leading-tight">Configuración: {process.name}</h2>
-              <div className="flex items-center gap-3 mt-1.5">
-                <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${getStatusColor(process.status)}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">Configuración: {process.name}</span>
+                <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${getStatusColor(process.status)}`}>
                   {process.status}
                 </span>
-                <span className="text-xs text-slate-500">
-                  ID: {process.id.padStart(5, '0')}
-                </span>
-                <div className="h-3 w-px bg-slate-200" />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600">Completitud general:</span>
-                  <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${process.completeness === 100 ? 'bg-secondary' : process.completeness > 80 ? 'bg-amber-400' : 'bg-rose-400'}`}
-                      style={{ width: `${process.completeness}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-slate-700">{process.completeness}%</span>
-                </div>
+                <div className="h-3 w-px bg-slate-200 mx-0.5" />
+                <span className="text-[11px] font-medium text-slate-500">{process.completeness}% completado</span>
               </div>
+              <h2 className="text-[20px] font-bold text-primary tracking-tight leading-tight">
+                {sections.find(s => s.id === activeSection)?.label}
+              </h2>
+              <p className="text-[12.5px] text-slate-500 mt-0.5 hidden sm:block max-w-2xl">
+                {sections.find(s => s.id === activeSection)?.subtitle}
+              </p>
             </div>
           </div>
           <button 
             onClick={handleClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors ml-4 self-start mt-2"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
