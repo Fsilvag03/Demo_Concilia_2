@@ -19,7 +19,7 @@ export const PublicacionSection: React.FC<PublicacionSectionProps> = ({ process,
 
   // Simulated validation logic based on process data
   const hasSources = process.sources && process.sources.length > 0;
-  const hasRector = !!process.rectorSource;
+  const hasRector = !!process.mainSource;
   
   const checklist = [
     { id: 'datos', label: 'Datos del proceso completos', status: 'success' as const },
@@ -34,7 +34,7 @@ export const PublicacionSection: React.FC<PublicacionSectionProps> = ({ process,
       id: 'estrategia', 
       label: 'Estrategia de conciliación', 
       status: hasRector ? 'success' as const : 'error' as const,
-      message: hasRector ? undefined : 'Falta definir fuente rectora.'
+      message: hasRector ? undefined : 'Falta definir fuente principal.'
     },
     { id: 'diferencias', label: 'Diferencias y reglas completas', status: 'success' as const },
     { id: 'resultados', label: 'Resultados y salidas configurados', status: 'warning' as const, message: 'No hay reporte activo configurado.' }

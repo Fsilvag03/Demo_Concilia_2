@@ -218,9 +218,9 @@ export function ResumenSection({ onNavigate, process }: ResumenSectionProps) {
               <span className="font-semibold text-slate-800">{process.strategy || "No definida"}</span>
             </div>
             <div className="flex justify-between items-center text-[13px]">
-              <span className="text-slate-500 font-medium">F. rectora</span>
-              <span className="font-semibold text-slate-800 truncate pl-2 max-w-[140px]" title={process.rectorSource || "Ninguna"}>
-                {process.rectorSource || "Ninguna"}
+              <span className="text-slate-500 font-medium">F. principal</span>
+              <span className="font-semibold text-slate-800 truncate pl-2 max-w-[140px]" title={process.mainSource || "Ninguna"}>
+                {process.mainSource || "Ninguna"}
               </span>
             </div>
           </div>

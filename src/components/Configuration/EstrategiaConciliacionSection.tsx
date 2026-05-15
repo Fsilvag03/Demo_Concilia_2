@@ -42,7 +42,6 @@ interface CruceStep {
 export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSectionProps> = ({ process, onChange }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'Todas' | 'Activas' | 'Inactivas' | 'Incompletas' | 'Con error'>('Todas');
-  const [localRectorSource, setLocalRectorSource] = useState(process.rectorSource || process.sources[0] || '');
 
   const [steps, setSteps] = useState<CruceStep[]>(() => {
     const s1 = process.sources[0] || 'Fuente 1';
@@ -312,35 +311,16 @@ export const EstrategiaConciliacionSection: React.FC<EstrategiaConciliacionSecti
                 <div className="flex items-center gap-2">
                   <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-1.5">
                     <GitBranch size={13} className="text-slate-400" />
-                    Fuente Rectora:
+                    Fuente Principal:
                   </span>
                   {process.sources.length === 0 ? (
                     <span className="text-[13px] text-slate-400 italic">Configura al menos una...</span>
                   ) : (
-                    <select 
-                      value={localRectorSource}
-                      onChange={(e) => {
-                        const newVal = e.target.value;
-                        setLocalRectorSource(newVal);
-                        process.rectorSource = newVal; // Sync back to process object
-                        onChange();
-                      }}
-                      className="text-[13px] font-bold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm text-slate-800 appearance-none cursor-pointer"
-                      style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1em 1em' }}
-                    >
-                      <option value="" disabled>Seleccionar...</option>
-                      {process.sources.map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                    <span className="text-[13px] font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 inline-block min-w-[120px] shadow-sm">
+                      {process.mainSource || <span className="text-slate-400 font-normal italic">No configurada</span>}
+                    </span>
                   )}
                 </div>
-                {localRectorSource && !process.sources.includes(localRectorSource) && (
-                  <span className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
-                    <AlertTriangle size={12} />
-                    La fuente seleccionada ya no existe.
-                  </span>
-                )}
               </div>
             </div>
           </div>

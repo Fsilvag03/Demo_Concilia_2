@@ -10,7 +10,7 @@ export interface Process {
   completeness: number;
   lastEditedBy: string;
   lastEditedAt: string;
-  rectorSource?: string;
+  mainSource?: string;
 }
 
 interface ProcessCardProps {
@@ -52,12 +52,12 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({ process }) => {
           </p>
         </div>
         
-        {process.rectorSource && (
+        {process.mainSource && (
           <div className="flex gap-2.5 items-start">
             <Target size={14} className="text-slate-400 mt-0.5 shrink-0" />
             <p className="text-sm text-slate-600 leading-tight">
-              <span className="text-slate-500 mr-1">Rectora:</span> 
-              <span className="font-medium text-slate-700">{process.rectorSource}</span>
+              <span className="text-slate-500 mr-1">Principal:</span> 
+              <span className="font-medium text-slate-700">{process.mainSource}</span>
             </p>
           </div>
         )}

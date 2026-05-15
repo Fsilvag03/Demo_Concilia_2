@@ -20,7 +20,7 @@ const mockProcesses: Process[] = [
     name: 'Cash Pagos',
     status: 'Activo',
     sources: ['Cuenta 2056', 'Input', 'Portal Empresas'],
-    rectorSource: 'Cuenta 2056',
+    mainSource: 'Cuenta 2056',
     strategy: 'Multifuente',
     completeness: 88,
     lastEditedBy: 'Miriam R.',
@@ -193,7 +193,7 @@ export function ConfigurationPage() {
                       </td>
                       <td className="px-6 py-4 text-slate-600 truncate max-w-[200px]" title={process.sources.join(', ')}>
                         {process.sources.join(' · ')}
-                        {process.rectorSource && <span className="ml-2 text-xs text-slate-400">(Rectora: {process.rectorSource})</span>}
+                        {process.mainSource && <span className="ml-2 text-xs text-slate-400">(Principal: {process.mainSource})</span>}
                       </td>
                       <td className="px-6 py-4 text-slate-600">{process.strategy}</td>
                       <td className="px-6 py-4 text-right">

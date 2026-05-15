@@ -14,6 +14,7 @@ import {
   Settings2,
   FileCode,
   Info,
+  Star,
 } from "lucide-react";
 import type { Process } from "./ProcessCard";
 
@@ -232,6 +233,11 @@ export function FuentesCamposSection({
       default:
         return <Database size={24} className="text-primary/70" />;
     }
+  };
+
+  const handleSetMainSource = (sourceName: string) => {
+    process.mainSource = sourceName;
+    onChange();
   };
 
   if (view === "edit" && selectedFuente) {
@@ -533,12 +539,28 @@ export function FuentesCamposSection({
             <div className="flex-1 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between mb-1">
-                  <h4 className="font-bold text-slate-900 group-hover:text-primary transition-colors">
-                    {fuente.nombre}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-slate-900 group-hover:text-primary transition-colors">
+                      {fuente.nombre}
+                    </h4>
+                    {process.mainSource === fuente.nombre && (
+                      <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                        <Star size={10} fill="currentColor" /> Principal
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3">
                     {renderStatus(fuente.estado)}
                     <div className="flex items-center gap-1">
+                      {process.mainSource !== fuente.nombre && (
+                        <button
+                          onClick={() => handleSetMainSource(fuente.nombre)}
+                          className="text-slate-400 hover:text-amber-500 p-1 rounded-md hover:bg-amber-50 transition-colors"
+                          title="Marcar como fuente principal"
+                        >
+                          <Star size={16} />
+                        </button>
+                      )}
                       <button
                         className="text-slate-400 hover:text-primary p-1 rounded-md hover:bg-primary/5 transition-colors"
                         title="Duplicar fuente"

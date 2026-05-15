@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight, Layers, GitMerge, Rocket, Zap
+  ArrowLeft, Calendar, FileBox, Database, SlidersHorizontal, CheckCircle2, Play, AlertCircle, X, FileText, FileSpreadsheet, Settings2, UploadCloud, RefreshCw, AlertTriangle, Check, ArrowRight, FileCheck, FileX, ChevronDown, ChevronRight, Layers, GitMerge, Rocket, Zap, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ResultadoConciliacionView } from './ResultadoConciliacionView';
 
 interface FormularioProcesoProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
   const [procesoId, setProcesoId] = useState(procesoParams?.procesoId || '1');
   const [fechaOperativa, setFechaOperativa] = useState(procesoParams?.fecha || new Date().toISOString().split('T')[0]);
 
-  const [fase, setFase] = useState<'ingesta' | 'preparacion_loading' | 'preparacion_results'>('ingesta');
+  const [fase, setFase] = useState<'ingesta' | 'preparacion_loading' | 'preparacion_results' | 'conciliacion_loading' | 'resultado_conciliacion'>('ingesta');
   const [prepResult, setPrepResult] = useState<any>(null);
   const [selectedRuleCategory, setSelectedRuleCategory] = useState<Record<string, string | null>>({});
 
@@ -433,6 +434,12 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                       {prepResult.estado}
                     </div>
                   )}
+                  {fase === 'resultado_conciliacion' && (
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded border text-[11px] font-bold tracking-widest uppercase shadow-sm border-indigo-500/30 bg-indigo-500/10 text-indigo-700`}>
+                      <ShieldCheck size={12} />
+                      Conciliada con aprob. pendientes
+                    </div>
+                  )}
                 </div>
                 {/* Título: Proceso + Identificador */}
                 <h1 className="text-2xl font-bold text-primary-dark tracking-tight flex items-center">
@@ -443,12 +450,12 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
 
               {/* Contenedor Versión, Fecha Operativa y Cerrar */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-6 px-4 py-2.5 rounded-lg border border-primary/10 bg-slate-50 shadow-sm ring-1 ring-primary/5 h-[52px]">
-                  <div className="flex justify-center flex-col">
+                <div className="flex items-center gap-4 sm:gap-6 px-4 py-2.5 rounded-lg border border-primary/10 bg-slate-50 shadow-sm ring-1 ring-primary/5 h-auto min-h-[52px]">
+                  <div className="hidden sm:flex justify-center flex-col">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Versión</span>
                     <span className="text-[13px] font-bold text-slate-800 leading-none">{currentProceso.version}</span>
                   </div>
-                  <div className="w-px h-8 bg-slate-200"></div>
+                  <div className="hidden sm:block w-px h-8 bg-slate-200"></div>
                   <div className="flex justify-center flex-col">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Fecha Operativa</span>
                     <div className="flex items-center gap-1.5 text-[13px] font-bold text-slate-800 leading-none">
@@ -472,9 +479,8 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
             <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between gap-2 md:gap-4 w-full relative max-w-5xl">
               {[
                 { id: 1, name: 'Ingesta de Datos', state: fase === 'ingesta' ? 'current' : 'completed' },
-                { id: 2, name: 'Preparación', state: fase.startsWith('preparacion') ? 'current' : fase === 'reglas_y_cruces' ? 'completed' : 'pending' },
-                { id: 3, name: 'Reglas y Cruces', state: fase === 'reglas_y_cruces' ? 'current' : 'pending' },
-                { id: 4, name: 'Resultados', state: 'pending' }
+                { id: 2, name: 'Preparación', state: fase.startsWith('preparacion') ? 'current' : (fase.startsWith('conciliacion') || fase === 'resultado_conciliacion') ? 'completed' : 'pending' },
+                { id: 3, name: 'Conciliación', state: (fase.startsWith('conciliacion') || fase === 'resultado_conciliacion') ? 'current' : 'pending' }
               ].map((step, idx, arr) => (
                 <React.Fragment key={step.id}>
                   <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 group shrink-0">
@@ -772,6 +778,20 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
             </div>
           )}
 
+          {fase === 'conciliacion_loading' && (
+            <div className="w-full h-full flex flex-col items-center justify-center animate-in fade-in duration-300 min-h-[400px]">
+              <div className="w-20 h-20 rounded-full border-4 border-emerald-200 border-t-emerald-600 border-r-emerald-600 animate-spin mb-8 shadow-sm"></div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-3">Conciliando datos...</h3>
+              <p className="text-slate-500 text-[15px] max-w-md text-center">
+                Aplicando estrategia de conciliación y pasos de cruce configurados.
+              </p>
+            </div>
+          )}
+
+          {fase === 'resultado_conciliacion' && (
+            <ResultadoConciliacionView onClose={onClose} prepResult={prepResult} />
+          )}
+
         </div>
 
         {/* Refined Footer Actions - Full Width */}
@@ -808,8 +828,33 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                  Preparando...
                </button>
              </div>
-          ) : (
-            <>
+           ) : fase === 'conciliacion_loading' ? (
+              <div className="w-full flex justify-end">
+                <button 
+                  disabled
+                  className="px-7 py-2.5 text-[14px] font-semibold rounded-lg transition-all flex items-center gap-2 text-white bg-emerald-500/60 shadow-sm cursor-not-allowed"
+                >
+                  Conciliando...
+                </button>
+              </div>
+           ) : fase === 'resultado_conciliacion' ? (
+              <>
+                <button 
+                  onClick={() => setFase('preparacion_results')}
+                  className="px-5 py-2 text-[13px] font-semibold text-primary hover:text-primary-dark bg-white hover:bg-slate-50 rounded-lg transition-colors border border-primary/20 hover:border-primary/30 shadow-sm"
+                >
+                  Regresar a preparación
+                </button>
+                <button 
+                  onClick={onClose}
+                  className="px-7 py-2.5 text-[14px] font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2"
+                >
+                  Finalizar
+                  <Check size={16} />
+                </button>
+              </>
+           ) : (
+             <>
                <button 
                  onClick={() => setFase('ingesta')}
                  className="px-5 py-2 text-[13px] font-semibold text-primary hover:text-primary-dark bg-white hover:bg-slate-50 rounded-lg transition-colors border border-primary/20 hover:border-primary/30 shadow-sm"
@@ -820,7 +865,8 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                <button 
                  disabled={prepResult?.estado === 'Preparación con errores'}
                  onClick={() => {
-                   /* onClose(); in real app move to conciliar */
+                   setFase('conciliacion_loading');
+                   setTimeout(() => setFase('resultado_conciliacion'), 3000);
                  }}
                  className={`px-7 py-2.5 text-[14px] font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
                     prepResult?.estado !== 'Preparación con errores'
@@ -828,7 +874,7 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                      : 'text-slate-400 bg-slate-100 shadow-none cursor-not-allowed border border-slate-200'
                  }`}
                >
-                 Continuar a Conciliación
+                 Conciliar datos
                  <ArrowRight size={16} className={prepResult?.estado !== 'Preparación con errores' ? "text-secondary" : "text-slate-400"} />
                </button>
             </>

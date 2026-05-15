@@ -34,7 +34,7 @@ interface ConfiguracionDiferenciasSectionProps {
 const diferencias = [
   {
     id: "1",
-    name: "Registro solo en fuente rectora",
+    name: "Registro solo en fuente principal",
     icon: GitBranch,
     color: "text-indigo-600",
     bg: "bg-indigo-50",
