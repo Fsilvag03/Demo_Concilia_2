@@ -10,283 +10,239 @@ import { createPortal } from 'react-dom';
 export function DetalleResultadoModal({ data, onClose }: { data: any, onClose: () => void }) {
   if (!data) return null;
 
-  const isDiferencia = data.estado === 'Diferencia';
+  const isDiferencia = data.estado === 'Con diferencia';
   const isConciliado = data.estado === 'Conciliado';
-  const isPendiente = data.estado === 'Pendiente Aprobación';
   const isExcluido = data.estado === 'Excluido';
+  const isPendiente = data.aprobacion === 'Pendiente';
+
+  const StateIcon = isConciliado ? CheckCircle2 :
+                    isDiferencia ? AlertTriangle :
+                    isPendiente ? ShieldCheck :
+                    FileX;
+  
+  const iconColor = isConciliado ? 'text-emerald-500 bg-emerald-50' :
+                    isDiferencia ? 'text-amber-500 bg-amber-50' :
+                    isPendiente ? 'text-indigo-500 bg-indigo-50' :
+                    'text-slate-500 bg-slate-100';
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-start justify-between px-6 md:px-8 py-6 border-b border-slate-100 relative">
           <div className="flex gap-4 items-center">
-            <div className={`p-3 rounded-lg ${
-                isConciliado ? 'bg-emerald-100 text-emerald-600' :
-                isDiferencia ? 'bg-amber-100 text-amber-600' :
-                isPendiente ? 'bg-indigo-100 text-indigo-600' :
-                'bg-slate-200 text-slate-600'
-              }`}>
-              {isConciliado ? <CheckCircle2 size={24} /> :
-               isDiferencia ? <AlertTriangle size={24} /> :
-               isPendiente ? <ShieldCheck size={24} /> :
-               <FileX size={24} />}
-            </div>
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-0.5 block">
-                Análisis de Transacción
-              </span>
-              <h3 className="text-xl font-bold text-slate-800">{data.clave}</h3>
-              <p className="text-sm text-slate-500 font-medium mt-0.5">{data.nombre}</p>
-            </div>
+             <div className={`p-3 rounded-full ${iconColor} shrink-0`}>
+                <StateIcon size={24} strokeWidth={2} />
+             </div>
+             <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1 block">
+                  Detalle de Registro
+                </span>
+                <h3 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">{data.clave}</h3>
+                <p className="text-sm font-medium text-slate-500 mt-1">{data.nombre}</p>
+             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto bg-slate-50/50">
+        <div className="p-6 md:px-8 md:py-8 overflow-y-auto hide-scrollbar flex-1">
           
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             
-            {/* Top Area: Values & Criteria Side-by-Side */}
             {!isExcluido && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Comparación de Valores */}
-                <div className="lg:col-span-2 space-y-4">
-                  <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">
-                    <Database size={16} className="text-slate-400" />
-                    Comparación de Valores
-                  </h4>
-                  
-                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left">
-                       <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                         <tr>
-                           <th className="px-4 py-3 border-b border-r border-slate-200 w-1/3">Campo de Datos</th>
-                           <th className="px-4 py-3 border-b border-r border-slate-200 w-1/3 text-slate-700">{data.fuenteR} <span className="text-[10px] font-normal text-slate-400 ml-1">(Principal)</span></th>
-                           <th className="px-4 py-3 border-b border-slate-200 w-1/3 text-slate-700">{data.fuenteC && data.fuenteC !== '-' ? data.fuenteC : 'Contraparte'}</th>
-                         </tr>
-                       </thead>
-                       <tbody className="text-[13px] divide-y divide-slate-100">
-                         <tr className="hover:bg-slate-50/50 transition-colors">
-                           <td className="px-4 py-3 font-semibold text-slate-700 border-r border-slate-100 flex items-center gap-2">
-                             <Layers size={14} className="text-slate-400" />
-                             Clave de Referencia
-                           </td>
-                           <td className="px-4 py-3 font-mono text-slate-600 border-r border-slate-100">{data.clave}</td>
-                           <td className="px-4 py-3 font-mono text-slate-600">{data.clave}</td>
-                         </tr>
-                         <tr className="hover:bg-slate-50/50 transition-colors">
-                           <td className="px-4 py-3 font-semibold text-slate-700 border-r border-slate-100 flex items-center gap-2">
-                             <Activity size={14} className="text-slate-400" />
-                             Monto Total
-                           </td>
-                           <td className="px-4 py-4 border-r border-slate-100">
-                             <span className="text-lg font-mono font-medium text-slate-800">{data.montoR || '-'}</span>
-                           </td>
-                           <td className="px-4 py-4">
-                             <span className="text-lg font-mono font-medium text-slate-800">{data.montoC || '-'}</span>
-                           </td>
-                         </tr>
-                       </tbody>
-                    </table>
-                  </div>
-                  
-                  {/* Trazabilidad (Paso) */}
-                  <div className="pt-2">
-                    <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">
-                      <GitMerge size={16} className="text-slate-400" />
-                      Trazabilidad del Cruce
-                    </h4>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm">
-                       <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center text-sm font-bold shrink-0 shadow-sm mt-0.5">
-                         {data.paso === '1. Cruce exacto' ? '1' : data.paso === '2. Cruce tolerante' ? '2' : '-'}
-                       </div>
-                       <div>
-                         <span className="text-sm font-bold text-slate-800 block mb-1">{data.paso}</span>
-                         <span className="text-[13px] text-slate-500 leading-relaxed block">
-                           El motor de conciliación procesó este registro durante el <strong>paso {data.paso === '1. Cruce exacto' ? '1' : data.paso === '2. Cruce tolerante' ? '2' : ''}</strong> de la estrategia actual, 
-                           y se determinó que su estado final es <span className={`font-semibold inline-block px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider ${
-                             isConciliado ? 'bg-emerald-100 text-emerald-700' :
-                             isDiferencia ? 'bg-amber-100 text-amber-700' :
-                             isPendiente ? 'bg-indigo-100 text-indigo-700' :
-                             'bg-slate-200 text-slate-700'
-                           }`}>{data.estado}</span>.
-                         </span>
-                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column: Criterios */}
+              <>
+                {/* Valores */}
                 <div className="space-y-4">
-                  <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">
-                    <CheckCircle2 size={16} className="text-slate-400" />
-                    Criterios Evaluados
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <Database size={16} className="text-slate-400" />
+                    Comparación
                   </h4>
-                  <div className="space-y-2.5">
-                     <div className="flex items-start gap-3 p-3.5 bg-white border border-slate-200 shadow-sm rounded-xl">
-                        <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />
-                        <div>
-                          <span className="text-[13px] font-bold text-slate-800 block">Coincidencia de Clave</span>
-                          <span className="text-[12px] text-slate-500 mt-0.5 block leading-relaxed">Ambos registros comparten la id de referencia.</span>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className={`p-4 rounded-xl border relative group transition-all shadow-sm ${data.direccionDiferencia === 'mayor_r' ? 'bg-amber-50/50 border-amber-100' : data.direccionDiferencia === 'menor_r' ? 'bg-rose-50/50 border-rose-100' : 'bg-white border-slate-200'}`}>
+                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3 line-clamp-1" title={data.fuenteR}>{data.fuenteR} <span className="text-[10px] font-normal lowercase ml-1">(Principal)</span></span>
+                       <div className="text-2xl lg:text-3xl font-mono text-slate-800 font-medium">{data.montoR || '-'}</div>
+                     </div>
+                     <div className={`p-4 rounded-xl border relative group transition-all shadow-sm ${data.direccionDiferencia === 'menor_r' ? 'bg-amber-50/50 border-amber-100' : data.direccionDiferencia === 'mayor_r' ? 'bg-rose-50/50 border-rose-100' : 'bg-white border-slate-200'}`}>
+                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3 line-clamp-1" title={data.fuenteC && data.fuenteC !== '-' ? data.fuenteC : 'Contraparte'}>{data.fuenteC && data.fuenteC !== '-' ? data.fuenteC : 'Contraparte'}</span>
+                       <div className="text-2xl lg:text-3xl font-mono text-slate-800 font-medium">{data.montoC || '-'}</div>
+                     </div>
+                  </div>
+                  {data.diferencia !== '-' && data.diferencia !== '0.00' && (
+                     <div className={`flex items-center justify-between p-4 rounded-xl border ${data.direccionDiferencia === 'mayor_r' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                        <span className="text-sm font-bold uppercase tracking-wider block">Diferencia</span>
+                        <div className="flex items-center gap-2">
+                           <span className="text-xs font-semibold opacity-80 uppercase tracking-wide">
+                             {data.direccionDiferencia === 'mayor_r' ? `${data.fuenteR} es mayor` : `${data.fuenteR} es menor`}
+                           </span>
+                           <span className="text-xl font-mono font-medium">{data.diferencia}</span>
                         </div>
                      </div>
-                     {isDiferencia && (
-                       <div className="flex items-start gap-3 p-3.5 bg-rose-50 border border-rose-100 shadow-sm rounded-xl">
-                          <XCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="text-[13px] font-bold text-rose-900 block">Diferencia de Monto</span>
-                            <span className="text-[12px] text-rose-700 mt-0.5 block leading-relaxed">Diferencia nominal mayor al límite permitido.</span>
-                          </div>
-                       </div>
-                     )}
-                     {isConciliado && (
-                       <div className="flex items-start gap-3 p-3.5 bg-emerald-50 border border-emerald-100 shadow-sm rounded-xl">
-                          <CheckCircle2 size={16} className="text-emerald-600 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="text-[13px] font-bold text-emerald-900 block">Monto dentro de rango</span>
-                            <span className="text-[12px] text-emerald-700 mt-0.5 block leading-relaxed">Satisface las reglas y el par de tolerancia.</span>
-                          </div>
-                       </div>
-                     )}
-                     {data.nombre === 'Falta en Sistema POS' && (
-                       <div className="flex items-start gap-3 p-3.5 bg-rose-50 border border-rose-100 shadow-sm rounded-xl">
-                          <XCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="text-[13px] font-bold text-rose-900 block">Sin Contraparte</span>
-                            <span className="text-[12px] text-rose-700 mt-0.5 block leading-relaxed">No se detectó el registro equivalente en POS.</span>
-                          </div>
-                       </div>
-                     )}
-                  </div>
+                  )}
                 </div>
 
-              </div>
+                <div className="h-px bg-slate-100 w-full line-clamp-none" />
+
+                {/* Trazabilidad y Evaluación */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <GitMerge size={16} className="text-slate-400" />
+                        Trazabilidad
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Clasificación Asignada</span>
+                          <span className="text-sm font-bold text-slate-800">{data.clasificacion || '-'}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Paso o Estrategia</span>
+                          <span className="text-sm font-medium text-slate-700">{data.paso}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Estado Final</span>
+                          <div>
+                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold tracking-wide uppercase ${
+                               isConciliado ? 'bg-emerald-100 text-emerald-700' :
+                               isDiferencia ? 'bg-amber-100 text-amber-700' :
+                               'bg-slate-100 text-slate-600'
+                            }`}>
+                              {data.estado}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <FileCheck size={16} className="text-slate-400" />
+                        Criterios Evaluados
+                      </h4>
+                      {data.evaluaciones && data.evaluaciones.length > 0 ? (
+                        <div className="space-y-2">
+                           {data.evaluaciones.map((req: any, i: number) => (
+                              <div key={i} className={`flex items-start gap-2.5 p-2.5 rounded-lg border shadow-sm ${req.estado === 'pass' ? 'bg-emerald-50/50 border-emerald-100/50' : 'bg-rose-50/50 border-rose-100/50'}`}>
+                                {req.estado === 'pass' ? <CheckCircle2 size={15} className="text-emerald-500 mt-0.5 shrink-0" /> : <XCircle size={15} className="text-rose-500 mt-0.5 shrink-0" />}
+                                <div>
+                                   <span className={`text-[12px] font-bold block ${req.estado === 'pass' ? 'text-emerald-900' : 'text-rose-900'}`}>{req.criterio}</span>
+                                </div>
+                              </div>
+                           ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500 italic">No se encontraron evaluaciones detalladas.</span>
+                      )}
+                   </div>
+                </div>
+
+                <div className="h-px bg-slate-100 w-full line-clamp-none" />
+
+                {/* Info Operativa y Aprobación */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <Activity size={16} className="text-slate-400" />
+                        Acción y Resolución
+                      </h4>
+                      <div className="space-y-3">
+                         <div className="flex flex-col gap-1">
+                           <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Tratamiento Sugerido</span>
+                           <span className="text-sm font-bold text-slate-800">{data.tratamiento !== '-' ? data.tratamiento : 'Ninguna'}</span>
+                         </div>
+                         <div className="flex gap-6 mt-3">
+                           <div className="flex flex-col gap-1">
+                             <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Bloquea Cierre</span>
+                             <span className={`text-sm font-bold ${data.bloqueaCierre ? 'text-rose-600' : 'text-slate-600'}`}>{data.bloqueaCierre ? 'Sí' : 'No'}</span>
+                           </div>
+                           <div className="flex flex-col gap-1">
+                             <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">SLA</span>
+                             <span className="text-sm font-bold text-slate-600">{data.sla || '-'}</span>
+                           </div>
+                         </div>
+                         <div className="flex flex-col gap-1 mt-1">
+                            <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Sustento Obligatorio</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                               {data.sustento && data.sustento.length > 0 ? data.sustento.map((s: string, idx: number) => (
+                                 <span key={idx} className="text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded-md shadow-sm flex items-center gap-1.5"><Paperclip size={12} className="text-slate-400" /> {s}</span>
+                               )) : <span className="text-sm text-slate-500 font-medium">Ninguno</span>}
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <ShieldCheck size={16} className="text-slate-400" />
+                        Estado de Aprobación
+                      </h4>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 shadow-sm">
+                        <div className="flex flex-col gap-1">
+                           <span className="text-xs font-semibold text-slate-500 tracking-wide uppercase">Estado Actual</span>
+                           <div className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                             {data.aprobacion === 'Pendiente' ? <Clock size={16} className="text-amber-500" /> : 
+                              data.aprobacion === 'Aprobada' ? <CheckCircle2 size={16} className="text-emerald-500" /> : 
+                              data.aprobacion === 'Rechazada' ? <XCircle size={16} className="text-rose-500" /> : 
+                              <Info size={16} className="text-slate-400" />} 
+                             <span className={`font-bold ${data.aprobacion === 'Pendiente' ? 'text-amber-700' : data.aprobacion === 'Aprobada' ? 'text-emerald-700' : data.aprobacion === 'Rechazada' ? 'text-rose-700' : 'text-slate-600'}`}>{data.aprobacion}</span>
+                           </div>
+                        </div>
+
+                        {data.aprobacionDetalle && (
+                          <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2.5">
+                             <div className="flex justify-between items-center text-[12px]">
+                               <span className="text-slate-500 font-semibold uppercase tracking-wider">Origen</span>
+                               <span className="font-bold text-slate-700">{data.aprobacionDetalle.origen}</span>
+                             </div>
+                             <div className="flex justify-between items-center text-[12px] border-t border-slate-100 pt-2.5">
+                               <span className="text-slate-500 font-semibold uppercase tracking-wider">Regla Aplicada</span>
+                               <span className="font-bold text-slate-700">{data.aprobacionDetalle.regla}</span>
+                             </div>
+                             <div className="flex justify-between items-center text-[12px] border-t border-slate-100 pt-2.5">
+                               <span className="text-slate-500 font-semibold uppercase tracking-wider">Condición Evaluada</span>
+                               <span className="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-bold">{data.aprobacionDetalle.condicion}</span>
+                             </div>
+                          </div>
+                        )}
+                      </div>
+                   </div>
+                </div>
+              </>
+            )}
+
+            {isExcluido && (
+               <div className="space-y-6">
+                 <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <div className="mx-auto w-12 h-12 bg-white shadow-sm rounded-full flex items-center justify-center mb-4 text-slate-400">
+                      <Filter size={24} />
+                    </div>
+                    <h5 className="text-lg font-bold text-slate-800 mb-2">Registro Excluido</h5>
+                    <p className="text-sm text-slate-500">
+                      Este registro fue excluido durante la preparación porque no cumplió con los criterios necesarios para ingresar a las reglas de conciliación.
+                    </p>
+                 </div>
+                 
+                 <div className="flex gap-4">
+                    <div className="flex-1 p-4 rounded-xl border border-slate-100 bg-slate-50">
+                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Fuente</span>
+                       <span className="text-base font-medium text-slate-800">{data.fuenteR}</span>
+                    </div>
+                    <div className="flex-1 p-4 rounded-xl border border-slate-100 bg-slate-50">
+                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Regla</span>
+                       <span className="text-base font-medium text-slate-800">Monto {'<='} 0</span>
+                    </div>
+                 </div>
+               </div>
             )}
             
-            {/* Excluido View */}
-            {isExcluido && (
-              <div className="max-w-2xl mx-auto w-full space-y-4 py-8">
-                <h4 className="flex items-center justify-center gap-2 text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">
-                  <FileX size={16} className="text-slate-400" />
-                  Motivo de Exclusión
-                </h4>
-                <div className="bg-white border border-slate-200 p-6 rounded-xl text-center shadow-sm">
-                  <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                    <Filter size={24} className="text-slate-400" />
-                  </div>
-                  <h5 className="text-base font-bold text-slate-800 mb-2">Descartado en preparación</h5>
-                  <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto">
-                    El registro no cumplió con las reglas de preparación de datos configuradas para la fuente, por lo que fue descartado antes de la conciliación.
-                  </p>
-                  
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col gap-3 text-left max-w-sm mx-auto">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-                      <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Fuente de Origen</span>
-                      <span className="text-sm font-bold text-slate-700">{data.fuenteR}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-1">
-                      <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Regla Aplicada</span>
-                      <span className="font-mono text-rose-700 font-bold text-xs bg-rose-50 border border-rose-100 px-2 py-1.5 rounded shadow-sm">Monto == 0</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Bottom Area: Operativa & Aprobaciones */}
-            {!isExcluido && (isDiferencia || isPendiente || data.tratamiento !== '-') && (
-              <div className="pt-2 border-t border-slate-200 mt-2">
-                <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 pb-4">
-                  <Activity size={16} className="text-slate-400" />
-                  Gestión Operativa del Registro
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  {/* Atención */}
-                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                     <table className="w-full text-left">
-                        <tbody className="divide-y divide-slate-100 text-[13px] font-medium">
-                           <tr>
-                              <td className="py-3 px-5 text-slate-500 bg-slate-50/50">Modo de Atención</td>
-                              <td className="py-3 px-5 text-right w-1/2">
-                                <span className={`inline-block px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider shadow-sm ${
-                                  data.tratamiento === 'Regularizar' ? 'bg-rose-100 text-rose-700 border border-rose-200 w-full text-center' :
-                                  data.tratamiento === 'Revisar' ? 'bg-amber-100 text-amber-700 border border-amber-200 w-full text-center' :
-                                  'bg-slate-100 text-slate-700 border border-slate-200 w-full text-center'
-                                }`}>{data.tratamiento}</span>
-                              </td>
-                           </tr>
-                           <tr>
-                              <td className="py-3 px-5 text-slate-500 bg-slate-50/50 flex items-center gap-2"><Lock size={14} className="text-slate-400"/> Bloquea Cierre</td>
-                              <td className="py-3 px-5 text-right font-bold text-slate-800">
-                                {data.tratamiento === 'Regularizar' || data.tratamiento === 'Revisar' ? <span className="text-rose-600">Sí</span> : 'No'}
-                              </td>
-                           </tr>
-                           <tr>
-                              <td className="py-3 px-5 text-slate-500 bg-slate-50/50 flex items-center gap-2"><Clock size={14} className="text-slate-400"/> SLA de Resolución</td>
-                              <td className="py-3 px-5 text-right font-bold text-slate-800">24 horas</td>
-                           </tr>
-                           <tr>
-                              <td className="py-3 px-5 text-slate-500 bg-slate-50/50 flex items-center gap-2">Sustento Obligatorio</td>
-                              <td className="py-3 px-5 text-right flex justify-end gap-2 flex-wrap">
-                                 <span className="text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm"><FileText size={12} className="text-slate-400"/> Observación</span>
-                                 <span className="text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm"><Paperclip size={12} className="text-slate-400"/> Adjunto</span>
-                              </td>
-                           </tr>
-                        </tbody>
-                     </table>
-                  </div>
-
-                  {/* Aprobación */}
-                  {(isPendiente || data.aprobacion !== '-') ? (
-                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-5 relative overflow-hidden">
-                      <div className="absolute -right-6 -top-6 text-indigo-100/50 rotate-12">
-                        <ShieldCheck size={120} strokeWidth={1} />
-                      </div>
-                      <div className="relative z-10 space-y-4">
-                         <div className="flex items-center gap-3 text-indigo-600">
-                           <ShieldCheck size={20} />
-                           <span className="font-bold text-sm tracking-wide">Aprobación Requerida</span>
-                         </div>
-                         <div className="bg-white border border-indigo-100/60 rounded-lg p-4 text-[13px] space-y-3 shadow-sm">
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-500 font-medium">Regla desencadenada</span>
-                              <span className="font-bold text-slate-800">Revisión de montos altos</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-500 font-medium">Condición</span>
-                              <span className="font-mono text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[12px] font-bold min-w-[70px] text-center">Monto {'>'} 1,000</span>
-                            </div>
-                            <div className="flex justify-between items-center border-t border-slate-100 pt-3 mt-1">
-                              <span className="text-slate-500 font-medium">Valor evaluado</span>
-                              <span className="font-mono text-slate-800 font-bold bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[12px]">{data.montoR || data.montoC || '$1,500'}</span>
-                            </div>
-                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-5 flex flex-col items-center justify-center text-center">
-                      <ShieldCheck size={24} className="text-slate-300 mb-2" />
-                      <span className="text-sm font-bold text-slate-400">Sin reglas de aprobación</span>
-                      <span className="text-[12px] text-slate-400 mt-1 max-w-[200px]">Este registro no cumple las condiciones para requerir aprobación.</span>
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            )}
           </div>
-          
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
-           <button onClick={onClose} className="px-6 py-2.5 bg-slate-800 text-white text-[13px] font-bold rounded-lg hover:bg-slate-900 transition-colors shadow-sm focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 outline-none">
-              Cerrar Detalle
+        <div className="px-6 md:px-8 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
+           <button onClick={onClose} className="px-6 py-2.5 bg-slate-800 text-white text-[13px] font-bold rounded-lg hover:bg-slate-900 transition-colors shadow-sm focus:ring-4 focus:ring-slate-900/10 outline-none">
+              Aceptar
            </button>
         </div>
       </div>

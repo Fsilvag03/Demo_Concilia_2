@@ -413,70 +413,73 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
           {/* Subtle background decoration */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
 
-          <div className="w-full flex flex-col pt-5 pb-4 px-6 md:px-10 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="px-2.5 py-0.5 rounded border border-primary/20 text-primary-dark text-[10px] font-bold tracking-widest uppercase bg-primary/5 shadow-sm">
-                    {fase === 'ingesta' ? 'Fase 1: Ingesta' : fase.startsWith('preparacion') ? 'Fase 2: Preparación' : 'Fase 3: Conciliación'}
+          <div className="w-full flex flex-col py-3 px-6 md:px-10 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Título: Proceso + Identificador */}
+                <h1 className="text-xl font-bold text-primary-dark tracking-tight flex items-center shrink-0">
+                  {currentProceso.name} 
+                  <span className="text-primary/40 font-semibold ml-2 text-lg tracking-normal">#{processIdString}</span>
+                </h1>
+                
+                <div className="h-5 w-px bg-slate-200 hidden md:block"></div>
+
+                <div className="flex items-center gap-2">
+                  <div className="px-2 py-0.5 rounded border border-primary/20 text-primary-dark text-[10px] font-bold tracking-widest uppercase bg-primary/5 shadow-sm">
+                    {fase === 'ingesta' ? '1: Ingesta' : fase.startsWith('preparacion') ? '2: Preparación' : '3: Conciliación'}
                   </div>
                   {fase === 'ingesta' && (
-                    <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded border text-[10px] font-bold tracking-widest uppercase shadow-sm ${
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-bold tracking-widest uppercase shadow-sm ${
                       estadoGeneralIngesta.allowed ? 'border-secondary/40 bg-secondary/10 text-emerald-700' : 'border-rose-500/30 bg-rose-500/10 text-rose-600'
                     }`}>
                       {estadoGeneralIngesta.allowed ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                      {estadoGeneralIngesta.allowed ? 'Listo para preparación' : 'Faltan requerimientos'}
+                      {estadoGeneralIngesta.allowed ? 'Listo para prepar.' : 'Faltan reqs'}
                     </div>
                   )}
                   {fase.startsWith('preparacion') && prepResult && (
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded border text-[11px] font-bold tracking-widest uppercase shadow-sm ${prepResult.estado === 'Listo para conciliar' ? 'border-secondary/40 bg-secondary/10 text-emerald-700' : prepResult.estado === 'Preparación con observaciones' ? 'border-amber-500/30 bg-amber-500/10 text-amber-600' : 'border-rose-500/30 bg-rose-500/10 text-rose-600'}`}>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-bold tracking-widest uppercase shadow-sm ${prepResult.estado === 'Listo para conciliar' ? 'border-secondary/40 bg-secondary/10 text-emerald-700' : prepResult.estado === 'Preparación con observaciones' ? 'border-amber-500/30 bg-amber-500/10 text-amber-600' : 'border-rose-500/30 bg-rose-500/10 text-rose-600'}`}>
                       {prepResult.estado === 'Listo para conciliar' ? <CheckCircle2 size={12} /> : prepResult.estado === 'Preparación con observaciones' ? <AlertTriangle size={12} /> : <AlertCircle size={12} />}
-                      {prepResult.estado}
+                      {prepResult.estado === 'Listo para conciliar' ? 'Listo' : 'Con obs'}
                     </div>
                   )}
                   {fase === 'resultado_conciliacion' && (
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded border text-[11px] font-bold tracking-widest uppercase shadow-sm border-indigo-500/30 bg-indigo-500/10 text-indigo-700`}>
-                      <ShieldCheck size={12} />
-                      Conciliada con aprob. pendientes
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-bold tracking-widest uppercase shadow-sm border-amber-500/30 bg-amber-500/10 text-amber-700`}>
+                      <AlertTriangle size={12} />
+                      Revisión Pendiente
                     </div>
                   )}
                 </div>
-                {/* Título: Proceso + Identificador */}
-                <h1 className="text-2xl font-bold text-primary-dark tracking-tight flex items-center">
-                  {currentProceso.name} 
-                  <span className="text-primary/40 font-semibold ml-2 text-xl tracking-normal">#{processIdString}</span>
-                </h1>
               </div>
 
               {/* Contenedor Versión, Fecha Operativa y Cerrar */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-4 sm:gap-6 px-4 py-2.5 rounded-lg border border-primary/10 bg-slate-50 shadow-sm ring-1 ring-primary/5 h-auto min-h-[52px]">
-                  <div className="hidden sm:flex justify-center flex-col">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Versión</span>
-                    <span className="text-[13px] font-bold text-slate-800 leading-none">{currentProceso.version}</span>
+                <div className="flex items-center gap-3 sm:gap-4 px-3 py-1.5 rounded border border-primary/10 bg-slate-50 shadow-sm ring-1 ring-primary/5">
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Versión:</span>
+                    <span className="text-[12px] font-bold text-slate-800 leading-none">{currentProceso.version}</span>
                   </div>
-                  <div className="hidden sm:block w-px h-8 bg-slate-200"></div>
-                  <div className="flex justify-center flex-col">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Fecha Operativa</span>
-                    <div className="flex items-center gap-1.5 text-[13px] font-bold text-slate-800 leading-none">
-                      <Calendar size={14} className="text-secondary" />
+                  <div className="hidden sm:block w-px h-4 bg-slate-200"></div>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={13} className="text-secondary" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha:</span>
+                    <span className="text-[12px] font-bold text-slate-800 leading-none">
                       {fechaOperativa}
-                    </div>
+                    </span>
                   </div>
                 </div>
                 
                 <button 
                   onClick={onClose}
-                  className="w-[52px] h-[52px] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-200 border border-slate-200 bg-white rounded-lg transition-colors shadow-sm"
+                  className="w-[32px] h-[32px] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-200 border border-slate-200 bg-white rounded transition-colors shadow-sm"
                   title="Cerrar y volver a Conciliaciones"
                 >
-                  <X size={20} />
+                  <X size={16} />
                 </button>
               </div>
             </div>
 
             {/* Fases / Stepper Visual */}
-            <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between gap-2 md:gap-4 w-full relative max-w-5xl">
+            <div className="mt-3 pt-2 border-t border-black/5 flex items-center justify-between gap-2 md:gap-4 w-full relative max-w-5xl">
               {[
                 { id: 1, name: 'Ingesta de Datos', state: fase === 'ingesta' ? 'current' : 'completed' },
                 { id: 2, name: 'Preparación', state: fase.startsWith('preparacion') ? 'current' : (fase.startsWith('conciliacion') || fase === 'resultado_conciliacion') ? 'completed' : 'pending' },
@@ -845,13 +848,21 @@ export function FormularioProceso({ isOpen, onClose, onStartIngesta, procesoPara
                 >
                   Regresar a preparación
                 </button>
-                <button 
-                  onClick={onClose}
-                  className="px-7 py-2.5 text-[14px] font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2"
-                >
-                  Finalizar
-                  <Check size={16} />
-                </button>
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-end pt-0.5">
+                    <span className="text-[11.5px] font-bold text-rose-600 flex items-center gap-1"><AlertTriangle size={12}/> No es posible cerrar</span>
+                    <span className="text-[10.5px] font-medium text-slate-500">2 aprob. pendientes, 4 diferencias</span>
+                  </div>
+                  <button 
+                    onClick={onClose}
+                    disabled={true}
+                    title="Existen diferencias bloqueantes o aprobaciones pendientes"
+                    className="px-6 py-2 sm:px-7 sm:py-2.5 text-[13px] sm:text-[14px] font-bold text-white bg-slate-800 disabled:bg-slate-300 disabled:text-slate-500 hover:bg-slate-900 disabled:hover:bg-slate-300 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    Cerrar conciliación
+                    <Check size={16} />
+                  </button>
+                </div>
               </>
            ) : (
              <>
